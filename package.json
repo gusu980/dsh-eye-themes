@@ -1,0 +1,61 @@
+{
+  "name": "dsh-eye-themes",
+  "version": "1.0.0",
+  "description": "Five eye-care palettes for DeepSeek Harness: paper, sage, mist, ink night and amber — one compact row in Settings → General, layered over the built-in light/dark modes.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "theme",
+    "palette",
+    "eye-care",
+    "护眼"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "lib/palettes.json",
+    "src/",
+    "tools/",
+    "cordis.patch.yml",
+    "README.md",
+    "preview/"
+  ],
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "verify": "node tools/verify.mjs",
+    "prepack": "node tools/build.mjs && node tools/verify.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-theme",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gusu980/dsh-eye-themes.git"
+  },
+  "homepage": "https://github.com/gusu980/dsh-eye-themes#readme",
+  "bugs": {
+    "url": "https://github.com/gusu980/dsh-eye-themes/issues"
+  },
+  "author": "gusu980"
+}

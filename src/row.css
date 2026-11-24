@@ -1,0 +1,97 @@
+/* Settings -> General row for dsh-eye-themes.
+   Mirrors the built-in Appearance row's geometry (hairline separator, 14px title,
+   cube buttons) so the two rows read as one surface. Everything is expressed in
+   the app's own tokens, never in palette colors: the cubes preview palette
+   colors inline, while the row itself follows whatever theme is active. */
+
+.dshEyeThemes_group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.dshEyeThemes_header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dshEyeThemes_title {
+  color: var(--dsw-alias-label-primary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.dshEyeThemes_hint {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.dshEyeThemes_row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.dshEyeThemes_cube {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border: 0.5px solid var(--dsw-alias-border-l4);
+  border-radius: var(--dsw-radius-xl, 12px);
+  background: none;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.dshEyeThemes_cube:hover:not(.is-selected) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.dshEyeThemes_cube.is-selected {
+  background: var(--dsw-alias-bg-module-platform);
+  border-color: var(--dsw-static-neutral-bluish-400);
+}
+
+.dshEyeThemes_cube:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 2px;
+}
+
+.dshEyeThemes_swatch {
+  display: flex;
+  overflow: hidden;
+  height: 18px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 999px;
+}
+
+.dshEyeThemes_swatch > i {
+  display: block;
+  flex: 1;
+}
+
+.dshEyeThemes_label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dshEyeThemes_badge {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 14px;
+}

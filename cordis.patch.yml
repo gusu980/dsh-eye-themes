@@ -1,0 +1,6 @@
+# dsh bundle patch: inserts this plugin into a profile's layer stack.
+# The host half is a no-op; the row exists so dsh-client-modules can see
+# `dsh.client` in this package and serve the browser bundle.
+- insert:
+    - id: eye-themes
+      name: 'dsh-eye-themes'
