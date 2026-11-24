@@ -43,24 +43,24 @@
 
 ## 安装
 
-本机（`web` profile，也就是当前 GUI 用的那个）已经装好了：
-
 ```bash
-ln -sfn /Users/gusu/Desktop/aiTest/dsh-eye-themes ~/.dsh/profiles/web/node_modules/dsh-eye-themes
-# 再把 "dsh-eye-themes" 加进 ~/.dsh/profiles/web/package.json 的 dsh.profile.bundles
-```
+# 从 GitHub 装（推荐，锁定提交）
+dsh plugin --profile web add github:gusu980/dsh-eye-themes#<sha>
 
-分发安装（任选其一）：
-
-```bash
-npm pack                                   # 生成 dsh-eye-themes-1.0.0.tgz
-dsh plugin --profile web install ./dsh-eye-themes-1.0.0.tgz
-# 或在插件市场里安装 @<你>/dsh-eye-themes
+# 或克隆后本地装
+git clone https://github.com/gusu980/dsh-eye-themes.git
+dsh plugin --profile web add ./dsh-eye-themes
 ```
 
 装完**重启 DSH Desktop / `dsh web`**，打开 设置 → 通用，在「外观」「字号大小」下面即可看到「护眼配色」。
 
-卸载：从 `dsh.profile.bundles` 移除该条目（或 `dsh plugin --profile web remove dsh-eye-themes`）后重启。
+本机（`web` profile）当前就是按 GitHub 提交装的，`package.json` 里记为：
+
+```json
+"dsh-eye-themes": "github:gusu980/dsh-eye-themes#f580d4458e5f0b91d6e01bb37ca0d8be6799b99c"
+```
+
+卸载：`dsh plugin --profile web remove dsh-eye-themes`（或从 `dsh.profile.bundles` 删掉该条目）后重启。
 配色层随插件一起释放，不会留下覆盖样式。
 
 ## 开发
