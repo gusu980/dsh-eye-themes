@@ -275,6 +275,12 @@ const tiers = tiersWrap.children.map((child) => expand(child))
 check('row renders one pill per text temperature', tiers.length === TEXT_PROFILES.length, String(tiers.length))
 check('pills are labelled buttons with aria-pressed', tiers.every((tier) => tier.type === 'button' && typeof tier.props['aria-pressed'] === 'boolean'))
 check('the default pill is selected', tiers[TEXT_PROFILES.findIndex((profile) => profile.id === DEFAULT_TEXT_PROFILE)].props['aria-pressed'] === true)
+const hintText = () => {
+  const row = expand(component({ t: (key) => key }))
+  const temp = row.children.find((child) => child?.props?.className === 'dshEyeThemes_temperature')
+  return temp.children.map((child) => expand(child))[0].children[1].children[0]
+}
+check('with no palette active the hint asks for one first', hintText() === 'textHintOff', String(hintText()))
 
 // Selecting a palette stacks one layer with the full token map; selecting another replaces it.
 const paletteCubes = cubes.slice(0, 5)

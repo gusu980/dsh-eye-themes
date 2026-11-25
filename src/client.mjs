@@ -38,6 +38,7 @@ const MESSAGES = {
     active: '使用中',
     textTitle: '文字温度',
     textHint: '越低越不刺眼，正文对比度不减到看不清',
+    textHintOff: '先选一套配色，再调这里的文字温度',
   },
   en: {
     title: 'Eye-care palettes',
@@ -47,6 +48,7 @@ const MESSAGES = {
     active: 'Active',
     textTitle: 'Text warmth',
     textHint: 'Softer settings dim the copy without losing legibility',
+    textHintOff: 'Pick a palette first — the choice is remembered either way',
   },
 }
 
@@ -332,7 +334,7 @@ function EyeThemesRow(props) {
         'div',
         { className: 'dshEyeThemes_tempLabel' },
         h('span', { className: 'dshEyeThemes_titleMuted' }, t('textTitle')),
-        h('span', { className: 'dshEyeThemes_hint' }, t('textHint')),
+        h('span', { className: 'dshEyeThemes_hint' }, selected === OFF_ID ? t('textHintOff') : t('textHint')),
       ),
       h(
         'div',
