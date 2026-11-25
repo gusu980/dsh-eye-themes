@@ -20,15 +20,33 @@
 import { contrast, luminance } from './color.mjs'
 import { PALETTES, derive, toOverrideMap } from './palettes.mjs'
 import {
-  DEFAULT_PAGE_STOP,
-  DEFAULT_TEXT_STOP,
-  PAGE_STOPS,
-  TEXT_STOPS,
+  DEFAULT_PAGE_VALUE,
+  DEFAULT_TEXT_VALUE,
+  PAGE_PRESETS,
+  PAGE_RANGE,
+  TEXT_PRESETS,
+  TEXT_RANGE,
   measure,
+  nearestPreset,
+  resolveValue,
   tune,
+  warmthFor,
 } from './tune.mjs'
 
-export { PALETTES, PAGE_STOPS, TEXT_STOPS, DEFAULT_PAGE_STOP, DEFAULT_TEXT_STOP, measure, tune }
+export {
+  PALETTES,
+  PAGE_PRESETS,
+  PAGE_RANGE,
+  TEXT_PRESETS,
+  TEXT_RANGE,
+  DEFAULT_PAGE_VALUE,
+  DEFAULT_TEXT_VALUE,
+  measure,
+  nearestPreset,
+  resolveValue,
+  tune,
+  warmthFor,
+}
 export { derive, toOverrideMap }
 
 /**
@@ -47,7 +65,7 @@ export function resolvePalette(id) {
  * get a `{ token: { light, dark } }` map back.
  *
  * @param id - palette id.
- * @param stops - `{ page?, text? }` stop ids; unknown ids fall back to the defaults.
+ * @param stops - `{ page?, text? }` numeric values (or legacy stop ids); invalid input falls back to the defaults.
  * @returns `{ id, name, tagline, textWarmth, pairs }`, or `undefined` for an unknown id.
  */
 export function buildPalette(id, stops) {
@@ -168,11 +186,14 @@ export function palettePreview(paletteId) {
       light: [pairs['--dsw-alias-bg-base'].light, pairs['--dsw-alias-label-primary'].light, pairs['--dsw-alias-brand-primary'].light],
       dark: [pairs['--dsw-alias-bg-base'].dark, pairs['--dsw-alias-label-primary'].dark, pairs['--dsw-alias-brand-primary'].dark],
     },
-    stops: TEXT_STOPS.map((stop) => {
-      const measured = measure(pairs, palette, { text: stop.id })
+    // Landmarks, not the whole scale: a picker can show five numbers without
+    // pretending the slider only has five positions.
+    stops: TEXT_PRESETS.map((preset) => {
+      const measured = measure(pairs, palette, { text: preset.value })
       return {
-        id: stop.id,
-        label: stop.label,
+        id: preset.id,
+        label: preset.label,
+        value: preset.value,
         contrast: { light: measured.light.primary, dark: measured.dark.primary },
       }
     }),

@@ -172,6 +172,32 @@ for (const palette of PALETTES) {
   check('the sampled matrix was exercised', combinations === PALETTES.length * pageSample.length * textSample.length, String(combinations))
 }
 
+// ------------------------------------------------------- 2c. library entry point
+{
+  // The non-DSH entry (`dsh-eye-themes/export`) is what another app depends on, so
+  // it is exercised here too — it once drifted from the tuner's API unnoticed.
+  const lib = await import('../src/export.mjs')
+  const built = lib.buildPalette('paper', { page: 0.93, text: 10.25 })
+  check('library: buildPalette resolves a palette', built?.id === 'paper' && typeof built.pairs === 'object')
+  check('library: buildPalette applies both values', built.pairs['--dsw-alias-label-primary'].dark === tune(toOverrideMap(PALETTES[0]), PALETTES[0], { page: 0.93, text: 10.25 })['--dsw-alias-label-primary'].dark)
+  check('library: unknown palette returns undefined', lib.buildPalette('nope') === undefined)
+
+  const css = lib.toCssText(built.pairs, { lightSelector: ':root', darkSelector: 'html.dark' })
+  check('library: toCssText emits both mode blocks', css.includes(':root {') && css.includes('html.dark {'), css.slice(0, 40))
+  // Count declaration lines, not `--dsw-` substrings: nine tokens are `--shiki-*`.
+  const declarations = css.split('\n').filter((line) => line.trim().startsWith('--')).length
+  check('library: toCssText covers every token in both modes', declarations === TOKEN_NAMES.length * 2, String(declarations))
+
+  const antd = lib.toAntdTheme(built.pairs, 'dark')
+  check('library: toAntdTheme maps the semantic tokens', Object.keys(antd.token).length === Object.keys(lib.ANTD_TOKEN_MAP).length && antd.token.colorBgBase === built.pairs['--dsw-alias-bg-base'].dark, String(Object.keys(antd.token).length))
+  check('library: every AntD mapping resolves to a real token', Object.values(lib.ANTD_TOKEN_MAP).every((name) => built.pairs[name] !== undefined), Object.values(lib.ANTD_TOKEN_MAP).filter((n) => built.pairs[n] === undefined).join(','))
+
+  const preview = lib.palettePreview('amber')
+  check('library: palettePreview reports the landmarks', preview.stops.length === TEXT_PRESETS.length && preview.stops.every((stop) => stop.contrast.dark >= 7), preview.stops.map((s) => s.contrast.dark.toFixed(1)).join(','))
+  check('library: palettePreview names swatches for both modes', preview.swatches.light.length === 3 && preview.swatches.dark.length === 3)
+  check('library: ranges are re-exported', lib.TEXT_RANGE.step === TEXT_RANGE.step && lib.PAGE_RANGE.max === PAGE_RANGE.max)
+}
+
 // ---------------------------------------------------------------- 3. bundle smoke
 /** Surfaces and accents must never move when only the text temperature changes. */
 const KEEP_TOKENS = [
