@@ -18,7 +18,7 @@
  * build inlines both (see tools/build.mjs), and the verifier imports it directly
  * to check the whole matrix.
  */
-import { contrast, luminance, mix } from './color.mjs'
+import { contrast, format, luminance, luminanceRgb, mix, parse } from './color.mjs'
 
 /** Off-white the copy leans toward; ~3800K reads warm without turning sepia. */
 const WARM_WHITE = '#FFE9CE'
@@ -102,40 +102,105 @@ export const ON_FILL_COPY_TOKENS = [
 ]
 
 /**
- * Text brightness stops, brightest first. `ceiling` is the maximum contrast the
- * brightest copy may reach against its (already brightened) surface; the two
- * stops between `standard` and `soft` exist because that gap was the one users
- * kept wanting to split.
+ * Text brightness is a **continuum**: every value between `min` and `max` is
+ * settable, in `step` increments. 0.05 of contrast is ~1% of luminance, i.e.
+ * below the point where a step is visible, so the slider reads as smooth while
+ * still quantising (the quantised value is what gets persisted and published,
+ * which keeps a drag from emitting a publish per pixel).
  */
-export const TEXT_STOPS = [
-  { id: 'standard', label: { zh: '标准', en: 'Standard' }, ceiling: 11.5, warmth: 0.55 },
-  { id: 'gentle', label: { zh: '偏柔', en: 'Gentle' }, ceiling: 10.85, warmth: 0.7 },
-  { id: 'mild', label: { zh: '较柔', en: 'Mild' }, ceiling: 10.2, warmth: 0.85 },
-  { id: 'soft', label: { zh: '柔和', en: 'Soft' }, ceiling: 9.6, warmth: 1 },
-  { id: 'softer', label: { zh: '更柔和', en: 'Softer' }, ceiling: 8, warmth: 1.35 },
-]
-
-/** Stop used until the user moves the slider. */
-export const DEFAULT_TEXT_STOP = 'soft'
+export const TEXT_RANGE = { min: 8, max: 11.5, step: 0.05 }
 
 /**
- * Page brightness stops, dimmest first. `factor` multiplies surface *luminance*,
- * not channel values: a near-black page has to move further in luminance to read
- * as "dimmer", and a paper page is already within 15% of white so it only has
- * room to go down. The ladder is asymmetric for that reason.
+ * Page brightness is continuous too: a luminance multiplier, not a stop id.
+ * 0.01 of factor is imperceptible, so quantising to it costs nothing visually
+ * and bounds the repaint rate.
  */
-export const PAGE_STOPS = [
-  { id: 'dim', label: { zh: '很暗', en: 'Dim' }, factor: 0.7 },
-  { id: 'dimmer', label: { zh: '偏暗', en: 'Dim-ish' }, factor: 0.8 },
-  { id: 'dimmish', label: { zh: '略暗', en: 'Slightly dim' }, factor: 0.9 },
-  { id: 'standard', label: { zh: '标准', en: 'Standard' }, factor: 1 },
-  { id: 'brighter', label: { zh: '略亮', en: 'Slightly bright' }, factor: 1.12 },
-  { id: 'bright', label: { zh: '偏亮', en: 'Bright-ish' }, factor: 1.28 },
-  { id: 'brightest', label: { zh: '很亮', en: 'Brightest' }, factor: 1.45 },
+export const PAGE_RANGE = { min: 0.7, max: 1.45, step: 0.01 }
+
+/**
+ * Named landmarks on the text scale. They are **presets, not the scale**: the
+ * slider can rest anywhere, these are the values the names refer to and what the
+ * readout falls back to for a human word ("柔和" instead of "9.60").
+ */
+export const TEXT_PRESETS = [
+  { id: 'standard', label: { zh: '标准', en: 'Standard' }, value: 11.5 },
+  { id: 'gentle', label: { zh: '偏柔', en: 'Gentle' }, value: 10.85 },
+  { id: 'mild', label: { zh: '较柔', en: 'Mild' }, value: 10.2 },
+  { id: 'soft', label: { zh: '柔和', en: 'Soft' }, value: 9.6 },
+  { id: 'softer', label: { zh: '更柔和', en: 'Softer' }, value: 8 },
 ]
 
-/** Stop used until the user moves the slider. */
-export const DEFAULT_PAGE_STOP = 'standard'
+/** Named landmarks on the page-brightness scale (100% = the palette's own values). */
+export const PAGE_PRESETS = [
+  { id: 'dim', label: { zh: '很暗', en: 'Dim' }, value: 0.7 },
+  { id: 'dimmer', label: { zh: '偏暗', en: 'Dim-ish' }, value: 0.8 },
+  { id: 'dimmish', label: { zh: '略暗', en: 'Slightly dim' }, value: 0.9 },
+  { id: 'standard', label: { zh: '标准', en: 'Standard' }, value: 1 },
+  { id: 'brighter', label: { zh: '略亮', en: 'Slightly bright' }, value: 1.12 },
+  { id: 'bright', label: { zh: '偏亮', en: 'Bright-ish' }, value: 1.28 },
+  { id: 'brightest', label: { zh: '很亮', en: 'Brightest' }, value: 1.45 },
+]
+
+/** Value used until the user moves the slider. */
+export const DEFAULT_TEXT_VALUE = 9.6
+/** Value used until the user moves the slider. */
+export const DEFAULT_PAGE_VALUE = 1
+
+/** Clamp onto the range's grid; rounds to 2 decimals so `9.600000000000001` never leaks out. */
+export function quantizeValue(value, range, fallback) {
+  // `Number(null) === 0` and `Number('') === 0`, so an absent setting would
+  // otherwise clamp to the bottom of the range instead of using the default.
+  if (value === null || value === undefined || value === '') return fallback
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numeric)) return fallback
+  const clamped = Math.min(range.max, Math.max(range.min, numeric))
+  return Math.round(Math.round(clamped / range.step) * range.step * 100) / 100
+}
+
+/**
+ * Resolve whatever the caller stored into a value on the scale.
+ *
+ * Accepts a number (the normal case) and the legacy named stop ids from the
+ * fixed-5-stops release, so a stored `"soft"` still means 9.6 after upgrading.
+ *
+ * @param input - number, numeric string, or legacy preset id.
+ * @param range - `TEXT_RANGE` or `PAGE_RANGE`.
+ * @param presets - the matching preset list.
+ * @param fallback - value to use when `input` is unusable.
+ * @returns a quantised value inside the range.
+ */
+export function resolveValue(input, range, presets, fallback) {
+  if (typeof input === 'string') {
+    const preset = presets.find((candidate) => candidate.id === input)
+    if (preset !== undefined) return preset.value
+  }
+  return quantizeValue(input, range, fallback)
+}
+
+/** The preset a value is closest to — for the human-readable readout. */
+export function nearestPreset(value, presets) {
+  let best = presets[0]
+  for (const preset of presets) {
+    if (Math.abs(preset.value - value) < Math.abs(best.value - value)) best = preset
+  }
+  return best
+}
+
+/**
+ * How far to warm the copy for a given text-brightness value.
+ *
+ * Dimmer copy is warmed further (that is the whole point of the slider); the
+ * brightest setting keeps the palette's own hue almost intact so "标准" still
+ * looks like the designed palette.
+ *
+ * @param value - text-brightness value on {@link TEXT_RANGE}.
+ * @returns a 0.35..1.4 multiplier applied to the palette's own `textWarmth`.
+ */
+export function warmthFor(value) {
+  const span = TEXT_RANGE.max - TEXT_RANGE.min
+  const position = span === 0 ? 0 : (TEXT_RANGE.max - value) / span
+  return 0.4 + Math.max(0, Math.min(1, position)) * 0.95
+}
 
 const MODES = ['light', 'dark']
 
@@ -158,21 +223,34 @@ function resolveStop(stops, id, fallbackId) {
  * Bisection, because fixed mixing steps quantise a near-black surface into
  * visible jumps and make adjacent slider stops collapse onto one colour.
  */
-function colorAtLuminance(color, target) {
-  const current = luminance(color)
-  if (Math.abs(current - target) <= 0.0002) return color
-  const toward = current > target ? '#000000' : '#ffffff'
+/**
+ * The two neighbouring 8-bit colours around a luminance target.
+ * @param color - colour to move.
+ * @param target - desired luminance.
+ * @returns `[under, over]` in luminance terms (either may equal the other after rounding).
+ */
+function bracketAt(color, target) {
+  const [r, g, b, a] = parse(color)
+  const darken = luminance(color) > target
+  const [tr, tg, tb] = darken ? [0, 0, 0] : [255, 255, 255]
+  // The channels move linearly, so bisect on the mix ratio and score each probe
+  // with luminanceRgb — no hex round-trip per iteration.
   let low = 0
   let high = 1
-  for (let step = 0; step < 24; step += 1) {
+  for (let step = 0; step < 18; step += 1) {
     const mid = (low + high) / 2
-    const value = luminance(mix(color, toward, mid))
-    if (toward === '#000000' ? value > target : value < target) low = mid
+    const value = luminanceRgb(r + (tr - r) * mid, g + (tg - g) * mid, b + (tb - b) * mid)
+    if (darken ? value > target : value < target) low = mid
     else high = mid
   }
-  // 8-bit rounding means one side of the bracket can land closer than the other.
-  const below = mix(color, toward, low)
-  const above = mix(color, toward, high)
+  const at = (k) => format([r + (tr - r) * k, g + (tg - g) * k, b + (tb - b) * k, a])
+  return [at(low), at(high)]
+}
+
+/** Move a colour onto a luminance target, landing as close as 8-bit allows. */
+function colorAtLuminance(color, target) {
+  if (Math.abs(luminance(color) - target) <= 0.0002) return color
+  const [below, above] = bracketAt(color, target)
   return Math.abs(luminance(below) - target) <= Math.abs(luminance(above) - target) ? below : above
 }
 
@@ -192,7 +270,60 @@ function colorAtContrast(color, surface, target) {
   const desired = current > background
     ? target * (background + 0.05) - 0.05
     : (background + 0.05) / target - 0.05
-  return colorAtLuminance(color, Math.max(0.0006, Math.min(0.985, desired)))
+  const clamped = Math.max(0.0006, Math.min(0.985, desired))
+  if (Math.abs(current - clamped) <= 0.0002) return color
+  const [r, g, b, a] = parse(color)
+  const darken = luminance(color) > clamped
+  const [tr, tg, tb] = darken ? [0, 0, 0] : [255, 255, 255]
+  const [, boundary] = bracketAt(color, clamped)
+  const ratio = mixRatioOf(boundary, color, darken ? '#000000' : '#ffffff')
+  // Land on the **highest contrast that does not exceed the target**. A single
+  // 8-bit step is coarser than the slider's step, so the neighbourhood is walked
+  // explicitly: biasing down makes the achieved contrast a monotone function of
+  // the target, which is what stops neighbouring slider values from inverting.
+  const at = (k) => format([r + (tr - r) * k, g + (tg - g) * k, b + (tb - b) * k, a])
+  // Step down from the boundary until the target is not exceeded. Walking in one
+  // direction (never "nearest of two ends") is what makes the achieved contrast a
+  // monotone function of the target: a smaller target starts lower and stops lower.
+  // Which way lowers contrast depends on whether the copy is above or below the
+  // surface, so probe once instead of reasoning about it: the whole point of this
+  // walk is that it must never step away from the target.
+  const clampedRatio = Math.max(0, Math.min(1, ratio))
+  const here = contrast(at(clampedRatio), surface)
+  if (here <= target + 1e-9) return at(clampedRatio)
+  const sign = contrast(at(Math.min(1, clampedRatio + 1 / 255)), surface) < here ? 1 : -1
+  for (let step = 1; step <= 20; step += 1) {
+    const k = Math.max(0, Math.min(1, clampedRatio + (sign * step) / 255))
+    const hex = at(k)
+    if (contrast(hex, surface) <= target + 1e-9) return hex
+  }
+  return at(sign > 0 ? 1 : 0)
+}
+
+/**
+ * Inverse of a two-stop mix: how much of `toward` is in `hex`.
+ * @param hex - the mixed colour (8-bit, so approximate).
+ * @param from - the start colour.
+ * @param toward - the end colour.
+ * @returns the mix ratio, clamped to 0..1.
+ */
+function mixRatioOf(hex, from, toward) {
+  const [r, g, b] = parse(hex)
+  const [r0, g0, b0] = parse(from)
+  const [r1, g1, b1] = parse(toward)
+  const channels = [
+    [r, r0, r1],
+    [g, g0, g1],
+    [b, b0, b1],
+  ]
+  let total = 0
+  let count = 0
+  for (const [value, start, end] of channels) {
+    if (end === start) continue
+    total += (value - start) / (end - start)
+    count += 1
+  }
+  return count === 0 ? 0 : Math.min(1, Math.max(0, total / count))
 }
 
 /**
@@ -204,15 +335,15 @@ function colorAtContrast(color, surface, target) {
  * @returns a new pairs map; the input is never mutated.
  */
 export function tune(pairs, palette, options) {
-  const page = resolveStop(PAGE_STOPS, options?.page, DEFAULT_PAGE_STOP)
-  const text = resolveStop(TEXT_STOPS, options?.text, DEFAULT_TEXT_STOP)
-  const skew = clamp01((palette?.textWarmth ?? 0.15) * text.warmth)
+  const pageFactor = resolveValue(options?.page, PAGE_RANGE, PAGE_PRESETS, DEFAULT_PAGE_VALUE)
+  const textValue = resolveValue(options?.text, TEXT_RANGE, TEXT_PRESETS, DEFAULT_TEXT_VALUE)
+  const skew = clamp01((palette?.textWarmth ?? 0.15) * warmthFor(textValue))
 
   const out = {}
   for (const [name, pair] of Object.entries(pairs)) out[name] = { light: pair.light, dark: pair.dark }
 
   // 1. Page brightness: surfaces only, hue preserved.
-  if (page.factor !== 1) {
+  if (pageFactor !== 1) {
     for (const name of SURFACE_TOKENS) {
       const pair = out[name]
       if (pair === undefined) continue
@@ -221,7 +352,7 @@ export function tune(pairs, palette, options) {
         // A light page sits close to white: brighting it would clip, so damp that
         // direction only. Dimming stays at full strength — dimming a paper page is
         // the main reason to reach for this slider.
-        const factor = mode === 'light' && page.factor > 1 ? 1 + (page.factor - 1) * 0.2 : page.factor
+        const factor = mode === 'light' && pageFactor > 1 ? 1 + (pageFactor - 1) * 0.2 : pageFactor
         const target = Math.min(SURFACE_LUMINANCE_MAX, Math.max(SURFACE_LUMINANCE_MIN, luminance(pair[mode]) * factor))
         pair[mode] = colorAtLuminance(pair[mode], target)
       }
@@ -240,7 +371,7 @@ export function tune(pairs, palette, options) {
     const primaryRaw = pairs['--dsw-alias-label-primary']?.[mode]
     if (base === undefined || primaryRaw === undefined || !isPlainColor(base) || !isPlainColor(primaryRaw)) continue
 
-    const target = Math.min(19, text.ceiling)
+    const target = Math.min(19, textValue)
     const primary = colorAtContrast(numix(primaryRaw, skew), base, target)
     out['--dsw-alias-label-primary'][mode] = primary
 
@@ -282,6 +413,8 @@ export function tune(pairs, palette, options) {
  */
 export function measure(pairs, palette, options) {
   const tuned = tune(pairs, palette, options)
+  const textValue = resolveValue(options?.text, TEXT_RANGE, TEXT_PRESETS, DEFAULT_TEXT_VALUE)
+  const pageFactor = resolveValue(options?.page, PAGE_RANGE, PAGE_PRESETS, DEFAULT_PAGE_VALUE)
   const result = {}
   for (const mode of MODES) {
     const base = tuned['--dsw-alias-bg-base'][mode]
@@ -305,7 +438,8 @@ export function measure(pairs, palette, options) {
         ].map((name) => contrast(tuned[name][mode], tuned['--dsw-alias-markdown-code-block'][mode])),
       ),
       primaryHex: raw,
-      lightCopy,
+      textValue,
+      pageFactor,
     }
   }
   return result

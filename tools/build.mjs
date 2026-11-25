@@ -13,10 +13,12 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PALETTES, TOKEN_NAMES, audit, toOverrideMap } from '../src/palettes.mjs'
 import {
-  DEFAULT_PAGE_STOP,
-  DEFAULT_TEXT_STOP,
-  PAGE_STOPS,
-  TEXT_STOPS,
+  DEFAULT_PAGE_VALUE,
+  DEFAULT_TEXT_VALUE,
+  PAGE_PRESETS,
+  PAGE_RANGE,
+  TEXT_PRESETS,
+  TEXT_RANGE,
   measure,
 } from '../src/tune.mjs'
 
@@ -95,15 +97,15 @@ writeFileSync(
     {
       generated: 'tools/build.mjs',
       tokenCount: TOKEN_NAMES.length,
-      pageStops: PAGE_STOPS,
-      textStops: TEXT_STOPS,
-      defaults: { page: DEFAULT_PAGE_STOP, text: DEFAULT_TEXT_STOP },
+      page: { range: PAGE_RANGE, presets: PAGE_PRESETS, default: DEFAULT_PAGE_VALUE },
+      text: { range: TEXT_RANGE, presets: TEXT_PRESETS, default: DEFAULT_TEXT_VALUE },
       palettes: payload.map((palette, index) => {
         const record = PALETTES[index]
         // Sample table for the README / preview: text stops at the default page brightness.
-        const samples = TEXT_STOPS.map((stop) => ({
-          stop: stop.id,
-          ...pickMeasured(measure(palette.tokens, record, { text: stop.id })),
+        const samples = TEXT_PRESETS.map((preset) => ({
+          stop: preset.id,
+          value: preset.value,
+          ...pickMeasured(measure(palette.tokens, record, { text: preset.value })),
         }))
         return { ...palette, audit: audit(record), samples }
       }),
@@ -115,5 +117,5 @@ writeFileSync(
 
 const bytes = Buffer.byteLength(bundle)
 console.log(
-  `built lib/client.js (${(bytes / 1024).toFixed(1)} KiB), lib/palettes.json (${PALETTES.length} palettes x ${TOKEN_NAMES.length} tokens, ${PAGE_STOPS.length} brightness x ${TEXT_STOPS.length} text stops)`,
+  `built lib/client.js (${(bytes / 1024).toFixed(1)} KiB), lib/palettes.json (${PALETTES.length} palettes x ${TOKEN_NAMES.length} tokens, page ${PAGE_RANGE.min}-${PAGE_RANGE.max} x text ${TEXT_RANGE.min}-${TEXT_RANGE.max})`,
 )

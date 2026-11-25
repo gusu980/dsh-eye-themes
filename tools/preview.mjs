@@ -12,9 +12,19 @@ import { tune } from '../src/tune.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const dump = JSON.parse(readFileSync(join(root, 'lib/palettes.json'), 'utf8'))
-const { palettes, pageStops, textStops, defaults } = dump
-const PAGE_LABELS = Object.fromEntries(pageStops.map((stop) => [stop.id, stop.label.zh]))
-const TEXT_LABELS = Object.fromEntries(textStops.map((stop) => [stop.id, stop.label.zh]))
+const { palettes } = dump
+const defaults = { page: dump.page.default, text: dump.text.default }
+/** Nine evenly spaced values across a range, so the preview shows the continuum. */
+const sample = (range, count) => {
+  const out = []
+  for (let index = 0; index < count; index += 1) {
+    const value = range.min + ((range.max - range.min) * index) / (count - 1)
+    out.push(Math.round(value / range.step) * range.step)
+  }
+  return out.map((value) => Math.round(value * 100) / 100)
+}
+const TEXT_SAMPLES = sample(dump.text.range, 9)
+const PAGE_SAMPLES = sample(dump.page.range, 7)
 
 const esc = (value) => String(value).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char])
 
@@ -98,15 +108,15 @@ function measureText(tuned, mode) {
   return contrast(ink, bg)
 }
 
-/** Text stops x palettes, dark mode. */
+/** Text values x palettes, dark mode. */
 function textGrid() {
   return palettes
     .map((palette) => {
-      const cells = textStops
-        .map((stop) => {
-          const { bg, ink, secondary, measured } = cell(palette, 'dark', { page: defaults.page, text: stop.id })
+      const cells = TEXT_SAMPLES
+        .map((value) => {
+          const { bg, ink, secondary, measured } = cell(palette, 'dark', { page: defaults.page, text: value })
           return `<div class="tcell" style="background:${bg}">
-            <div class="tname">${esc(TEXT_LABELS[stop.id])}</div>
+            <div class="tname">${value.toFixed(2)}</div>
             <div class="tsample" style="color:${ink}">正文 Body ${measured.toFixed(2)}:1</div>
             <div class="tsample2" style="color:${secondary}">次要 secondary</div>
             <div class="thex">${ink}</div>
@@ -123,11 +133,11 @@ function pageGrid() {
   const palette = palettes[0]
   return ['dark', 'light']
     .map((mode) => {
-      const cells = pageStops
-        .map((stop) => {
-          const { bg, ink, measured } = cell(palette, mode, { page: stop.id, text: defaults.text })
+      const cells = PAGE_SAMPLES
+        .map((value) => {
+          const { bg, ink, measured } = cell(palette, mode, { page: value, text: defaults.text })
           return `<div class="tcell" style="background:${bg}">
-            <div class="tname">${esc(PAGE_LABELS[stop.id])}</div>
+            <div class="tname">${Math.round(value * 100)}%</div>
             <div class="tsample" style="color:${ink}">正文 ${measured.toFixed(2)}:1</div>
             <div class="thex">${bg}</div>
           </div>`
@@ -188,7 +198,7 @@ const html = `<!doctype html>
   .trow { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: stretch; }
   .tpal { align-self: center; font-size: 13px; font-weight: 600; }
   .tpal em { display: block; font-weight: 400; color: #8a8a90; font-style: normal; font-size: 11px; }
-  .tcells { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .tcells { display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; }
   .tcells7 { grid-template-columns: repeat(7, 1fr); }
   .tcell { border-radius: 10px; padding: 10px 12px; border: .5px solid rgba(128,128,128,.25); }
   .tname { font-size: 10.5px; letter-spacing: .04em; opacity: .55; margin-bottom: 6px; }
@@ -204,14 +214,14 @@ ${palettes.map((palette) => card(palette, 'light')).join('\n')}
 ${palettes.map((palette) => card(palette, 'dark')).join('\n')}
 </div>
 
-<h2>文字亮度：5 档（深色模式下的正文）</h2>
-<p class="lede">滑条 5 档，正文对比度 11.5 → 8.0，「标准」和「柔和」之间补了两档，不会一跳就很淡。每一档都按目标对比度重新落色，层级不会倒挂。</p>
+<h2>文字亮度：8.0–11.5 无级可调（深色模式下的正文，取 9 个采样点）</h2>
+<p class="lede">任何一个值都能停（步长 0.05，约 70 档）。落色规则保证「绝不超过你选的对比度」，层级不会倒挂；8-bit 输出的量化极限约 0.17 个对比度点，肉眼不可见。</p>
 <div class="temps">
 ${textGrid()}
 </div>
 
-<h2>页面亮度：7 档（宣纸，浅色 / 深色各一条）</h2>
-<p class="lede">只动背景与卡片，不动强调色；文字会跟着重新落色，所以对比度保持在该档的目标值。浅色页面已经很接近白，往「亮」只能走一小段，往「暗」可以走很远。</p>
+<h2>页面亮度：70%–145% 无级可调（宣纸，浅色 / 深色各一条）</h2>
+<p class="lede">只动背景与卡片，不动强调色；文字会跟着重新落色，所以对比度始终落在你选的文字档上。浅色页面已经很接近白，往「亮」只能走一小段，往「暗」可以走很远。</p>
 <div class="temps">
 ${pageGrid()}
 </div>

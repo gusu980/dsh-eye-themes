@@ -1,114 +1,121 @@
 {
   "generated": "tools/build.mjs",
   "tokenCount": 146,
-  "pageStops": [
-    {
-      "id": "dim",
-      "label": {
-        "zh": "很暗",
-        "en": "Dim"
-      },
-      "factor": 0.7
+  "page": {
+    "range": {
+      "min": 0.7,
+      "max": 1.45,
+      "step": 0.01
     },
-    {
-      "id": "dimmer",
-      "label": {
-        "zh": "偏暗",
-        "en": "Dim-ish"
+    "presets": [
+      {
+        "id": "dim",
+        "label": {
+          "zh": "很暗",
+          "en": "Dim"
+        },
+        "value": 0.7
       },
-      "factor": 0.8
+      {
+        "id": "dimmer",
+        "label": {
+          "zh": "偏暗",
+          "en": "Dim-ish"
+        },
+        "value": 0.8
+      },
+      {
+        "id": "dimmish",
+        "label": {
+          "zh": "略暗",
+          "en": "Slightly dim"
+        },
+        "value": 0.9
+      },
+      {
+        "id": "standard",
+        "label": {
+          "zh": "标准",
+          "en": "Standard"
+        },
+        "value": 1
+      },
+      {
+        "id": "brighter",
+        "label": {
+          "zh": "略亮",
+          "en": "Slightly bright"
+        },
+        "value": 1.12
+      },
+      {
+        "id": "bright",
+        "label": {
+          "zh": "偏亮",
+          "en": "Bright-ish"
+        },
+        "value": 1.28
+      },
+      {
+        "id": "brightest",
+        "label": {
+          "zh": "很亮",
+          "en": "Brightest"
+        },
+        "value": 1.45
+      }
+    ],
+    "default": 1
+  },
+  "text": {
+    "range": {
+      "min": 8,
+      "max": 11.5,
+      "step": 0.05
     },
-    {
-      "id": "dimmish",
-      "label": {
-        "zh": "略暗",
-        "en": "Slightly dim"
+    "presets": [
+      {
+        "id": "standard",
+        "label": {
+          "zh": "标准",
+          "en": "Standard"
+        },
+        "value": 11.5
       },
-      "factor": 0.9
-    },
-    {
-      "id": "standard",
-      "label": {
-        "zh": "标准",
-        "en": "Standard"
+      {
+        "id": "gentle",
+        "label": {
+          "zh": "偏柔",
+          "en": "Gentle"
+        },
+        "value": 10.85
       },
-      "factor": 1
-    },
-    {
-      "id": "brighter",
-      "label": {
-        "zh": "略亮",
-        "en": "Slightly bright"
+      {
+        "id": "mild",
+        "label": {
+          "zh": "较柔",
+          "en": "Mild"
+        },
+        "value": 10.2
       },
-      "factor": 1.12
-    },
-    {
-      "id": "bright",
-      "label": {
-        "zh": "偏亮",
-        "en": "Bright-ish"
+      {
+        "id": "soft",
+        "label": {
+          "zh": "柔和",
+          "en": "Soft"
+        },
+        "value": 9.6
       },
-      "factor": 1.28
-    },
-    {
-      "id": "brightest",
-      "label": {
-        "zh": "很亮",
-        "en": "Brightest"
-      },
-      "factor": 1.45
-    }
-  ],
-  "textStops": [
-    {
-      "id": "standard",
-      "label": {
-        "zh": "标准",
-        "en": "Standard"
-      },
-      "ceiling": 11.5,
-      "warmth": 0.55
-    },
-    {
-      "id": "gentle",
-      "label": {
-        "zh": "偏柔",
-        "en": "Gentle"
-      },
-      "ceiling": 10.85,
-      "warmth": 0.7
-    },
-    {
-      "id": "mild",
-      "label": {
-        "zh": "较柔",
-        "en": "Mild"
-      },
-      "ceiling": 10.2,
-      "warmth": 0.85
-    },
-    {
-      "id": "soft",
-      "label": {
-        "zh": "柔和",
-        "en": "Soft"
-      },
-      "ceiling": 9.6,
-      "warmth": 1
-    },
-    {
-      "id": "softer",
-      "label": {
-        "zh": "更柔和",
-        "en": "Softer"
-      },
-      "ceiling": 8,
-      "warmth": 1.35
-    }
-  ],
-  "defaults": {
-    "page": "standard",
-    "text": "soft"
+      {
+        "id": "softer",
+        "label": {
+          "zh": "更柔和",
+          "en": "Softer"
+        },
+        "value": 8
+      }
+    ],
+    "default": 9.6
   },
   "palettes": [
     {
@@ -735,48 +742,52 @@
       "samples": [
         {
           "stop": "standard",
+          "value": 11.5,
           "light": {
             "base": "#F5F0E1",
-            "primary": 11.52,
-            "secondary": 8.69
+            "primary": 11.48,
+            "secondary": 8.7
           },
           "dark": {
             "base": "#211F19",
             "primary": 11.5,
             "primaryHex": "#dfd7c4",
-            "secondary": 8.73
+            "secondary": 8.71
           }
         },
         {
           "stop": "gentle",
+          "value": 10.85,
           "light": {
             "base": "#F5F0E1",
             "primary": 10.83,
-            "secondary": 8.24
+            "secondary": 8.14
           },
           "dark": {
             "base": "#211F19",
-            "primary": 10.86,
-            "primaryHex": "#dad1be",
-            "secondary": 8.25
+            "primary": 10.76,
+            "primaryHex": "#d9d0be",
+            "secondary": 8.24
           }
         },
         {
           "stop": "mild",
+          "value": 10.2,
           "light": {
             "base": "#F5F0E1",
-            "primary": 10.2,
-            "secondary": 7.76
+            "primary": 10.17,
+            "secondary": 7.65
           },
           "dark": {
             "base": "#211F19",
-            "primary": 10.2,
-            "primaryHex": "#d3cbb7",
+            "primary": 10.15,
+            "primaryHex": "#d4cab8",
             "secondary": 7.73
           }
         },
         {
           "stop": "soft",
+          "value": 9.6,
           "light": {
             "base": "#F5F0E1",
             "primary": 9.56,
@@ -784,23 +795,24 @@
           },
           "dark": {
             "base": "#211F19",
-            "primary": 9.61,
-            "primaryHex": "#cec5b2",
-            "secondary": 7.29
+            "primary": 9.51,
+            "primaryHex": "#cdc4b1",
+            "secondary": 7.23
           }
         },
         {
           "stop": "softer",
+          "value": 8,
           "light": {
             "base": "#F5F0E1",
-            "primary": 8,
+            "primary": 7.91,
             "secondary": 6.07
           },
           "dark": {
             "base": "#211F19",
             "primary": 7.97,
             "primaryHex": "#beb3a2",
-            "secondary": 6.09
+            "secondary": 6.04
           }
         }
       ]
@@ -1429,72 +1441,77 @@
       "samples": [
         {
           "stop": "standard",
+          "value": 11.5,
           "light": {
             "base": "#CCE8CF",
-            "primary": 11.54,
+            "primary": 11.45,
             "secondary": 8.71
           },
           "dark": {
             "base": "#16231A",
-            "primary": 11.52,
-            "primaryHex": "#d2dccc",
-            "secondary": 8.73
+            "primary": 11.41,
+            "primaryHex": "#d1dbcc",
+            "secondary": 8.71
           }
         },
         {
           "stop": "gentle",
+          "value": 10.85,
           "light": {
             "base": "#CCE8CF",
-            "primary": 10.81,
-            "secondary": 8.2
+            "primary": 10.84,
+            "secondary": 8.22
           },
           "dark": {
             "base": "#16231A",
-            "primary": 10.89,
-            "primaryHex": "#cdd6c7",
-            "secondary": 8.27
+            "primary": 10.78,
+            "primaryHex": "#ccd5c6",
+            "secondary": 8.2
           }
         },
         {
           "stop": "mild",
+          "value": 10.2,
           "light": {
             "base": "#CCE8CF",
-            "primary": 10.19,
-            "secondary": 7.75
+            "primary": 10.08,
+            "secondary": 7.73
           },
           "dark": {
             "base": "#16231A",
-            "primary": 10.19,
-            "primaryHex": "#c8cfc0",
-            "secondary": 7.78
+            "primary": 10.18,
+            "primaryHex": "#c7cfc1",
+            "secondary": 7.7
           }
         },
         {
           "stop": "soft",
+          "value": 9.6,
           "light": {
             "base": "#CCE8CF",
-            "primary": 9.62,
-            "secondary": 7.29
+            "primary": 9.51,
+            "secondary": 7.28
           },
           "dark": {
             "base": "#16231A",
-            "primary": 9.6,
-            "primaryHex": "#c3c9ba",
-            "secondary": 7.3
+            "primary": 9.58,
+            "primaryHex": "#c2c9ba",
+            "secondary": 7.29
           }
         },
         {
           "stop": "softer",
+          "value": 8,
           "light": {
             "base": "#CCE8CF",
-            "primary": 8.01,
+            "primary": 7.98,
             "secondary": 6.06
           },
           "dark": {
             "base": "#16231A",
-            "primary": 7.98,
-            "primaryHex": "#b4b7aa",
-            "secondary": 6.09
+            "primary": 7.97,
+            "primaryHex": "#b3b7aa",
+            "secondary": 6.03
           }
         }
       ]
@@ -2123,72 +2140,77 @@
       "samples": [
         {
           "stop": "standard",
+          "value": 11.5,
           "light": {
             "base": "#ECEDE7",
-            "primary": 11.52,
-            "secondary": 8.72
+            "primary": 11.48,
+            "secondary": 8.69
           },
           "dark": {
             "base": "#1A1D20",
-            "primary": 11.54,
-            "primaryHex": "#d1d6d7",
-            "secondary": 8.73
+            "primary": 11.44,
+            "primaryHex": "#d0d5d8",
+            "secondary": 8.7
           }
         },
         {
           "stop": "gentle",
+          "value": 10.85,
           "light": {
             "base": "#ECEDE7",
-            "primary": 10.85,
-            "secondary": 8.23
+            "primary": 10.84,
+            "secondary": 8.19
           },
           "dark": {
             "base": "#1A1D20",
-            "primary": 10.87,
-            "primaryHex": "#cbd0d1",
-            "secondary": 8.23
+            "primary": 10.77,
+            "primaryHex": "#cacfd1",
+            "secondary": 8.24
           }
         },
         {
           "stop": "mild",
+          "value": 10.2,
           "light": {
             "base": "#ECEDE7",
-            "primary": 10.23,
+            "primary": 10.07,
             "secondary": 7.72
           },
           "dark": {
             "base": "#1A1D20",
-            "primary": 10.17,
-            "primaryHex": "#c6c9cb",
-            "secondary": 7.78
+            "primary": 10.13,
+            "primaryHex": "#c4c9cb",
+            "secondary": 7.7
           }
         },
         {
           "stop": "soft",
+          "value": 9.6,
           "light": {
             "base": "#ECEDE7",
-            "primary": 9.59,
-            "secondary": 7.34
+            "primary": 9.49,
+            "secondary": 7.25
           },
           "dark": {
             "base": "#1A1D20",
-            "primary": 9.63,
-            "primaryHex": "#c0c4c5",
+            "primary": 9.53,
+            "primaryHex": "#bfc3c4",
             "secondary": 7.28
           }
         },
         {
           "stop": "softer",
+          "value": 8,
           "light": {
             "base": "#ECEDE7",
             "primary": 7.97,
-            "secondary": 6.09
+            "secondary": 6.02
           },
           "dark": {
             "base": "#1A1D20",
-            "primary": 8.02,
-            "primaryHex": "#b0b3b3",
-            "secondary": 6.08
+            "primary": 7.93,
+            "primaryHex": "#afb2b2",
+            "secondary": 6.02
           }
         }
       ]
@@ -2817,72 +2839,77 @@
       "samples": [
         {
           "stop": "standard",
+          "value": 11.5,
           "light": {
             "base": "#EDEDEB",
-            "primary": 11.5,
-            "secondary": 8.79
+            "primary": 11.38,
+            "secondary": 8.67
           },
           "dark": {
             "base": "#16171A",
-            "primary": 11.53,
-            "primaryHex": "#cfcfd2",
-            "secondary": 8.77
+            "primary": 11.45,
+            "primaryHex": "#cfced2",
+            "secondary": 8.68
           }
         },
         {
           "stop": "gentle",
+          "value": 10.85,
           "light": {
             "base": "#EDEDEB",
-            "primary": 10.87,
-            "secondary": 8.26
+            "primary": 10.74,
+            "secondary": 8.14
           },
           "dark": {
             "base": "#16171A",
-            "primary": 10.85,
-            "primaryHex": "#c9c9cc",
+            "primary": 10.77,
+            "primaryHex": "#c9c8cc",
             "secondary": 8.21
           }
         },
         {
           "stop": "mild",
+          "value": 10.2,
           "light": {
             "base": "#EDEDEB",
-            "primary": 10.24,
-            "secondary": 7.77
+            "primary": 10.09,
+            "secondary": 7.73
           },
           "dark": {
             "base": "#16171A",
-            "primary": 10.2,
-            "primaryHex": "#c4c3c4",
+            "primary": 10.19,
+            "primaryHex": "#c3c3c5",
             "secondary": 7.75
           }
         },
         {
           "stop": "soft",
+          "value": 9.6,
           "light": {
             "base": "#EDEDEB",
-            "primary": 9.65,
-            "secondary": 7.3
+            "primary": 9.49,
+            "secondary": 7.29
           },
           "dark": {
             "base": "#16171A",
             "primary": 9.58,
             "primaryHex": "#bebdbf",
-            "secondary": 7.31
+            "secondary": 7.25
           }
         },
         {
           "stop": "softer",
+          "value": 8,
           "light": {
             "base": "#EDEDEB",
-            "primary": 8.02,
+            "primary": 7.98,
             "secondary": 6.04
           },
           "dark": {
             "base": "#16171A",
-            "primary": 8.01,
-            "primaryHex": "#aeadae",
-            "secondary": 6.08
+            "primary": 7.92,
+            "primaryHex": "#adacad",
+            "secondary": 6.03
           }
         }
       ]
@@ -3511,72 +3538,77 @@
       "samples": [
         {
           "stop": "standard",
+          "value": 11.5,
           "light": {
             "base": "#F6EDE0",
-            "primary": 11.49,
-            "secondary": 8.76
+            "primary": 11.45,
+            "secondary": 8.68
           },
           "dark": {
             "base": "#1D1512",
-            "primary": 11.49,
-            "primaryHex": "#ddccba",
-            "secondary": 8.73
+            "primary": 11.5,
+            "primaryHex": "#ddccbb",
+            "secondary": 8.67
           }
         },
         {
           "stop": "gentle",
+          "value": 10.85,
           "light": {
             "base": "#F6EDE0",
             "primary": 10.85,
-            "secondary": 8.25
+            "secondary": 8.24
           },
           "dark": {
             "base": "#1D1512",
-            "primary": 10.81,
-            "primaryHex": "#d7c6b5",
-            "secondary": 8.26
+            "primary": 10.76,
+            "primaryHex": "#d5c6b4",
+            "secondary": 8.17
           }
         },
         {
           "stop": "mild",
+          "value": 10.2,
           "light": {
             "base": "#F6EDE0",
-            "primary": 10.21,
+            "primary": 10.18,
             "secondary": 7.74
           },
           "dark": {
             "base": "#1D1512",
-            "primary": 10.21,
-            "primaryHex": "#d0c1af",
-            "secondary": 7.78
+            "primary": 10.1,
+            "primaryHex": "#cfc0ae",
+            "secondary": 7.7
           }
         },
         {
           "stop": "soft",
+          "value": 9.6,
           "light": {
             "base": "#F6EDE0",
-            "primary": 9.62,
-            "secondary": 7.3
+            "primary": 9.59,
+            "secondary": 7.27
           },
           "dark": {
             "base": "#1D1512",
-            "primary": 9.6,
-            "primaryHex": "#cbbba9",
+            "primary": 9.51,
+            "primaryHex": "#cabaa9",
             "secondary": 7.29
           }
         },
         {
           "stop": "softer",
+          "value": 8,
           "light": {
             "base": "#F6EDE0",
             "primary": 7.99,
-            "secondary": 6.07
+            "secondary": 6.05
           },
           "dark": {
             "base": "#1D1512",
-            "primary": 8.01,
-            "primaryHex": "#b9ab9a",
-            "secondary": 6.07
+            "primary": 7.92,
+            "primaryHex": "#b8aa99",
+            "secondary": 6.02
           }
         }
       ]

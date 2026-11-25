@@ -38,7 +38,7 @@ const MESSAGES = {
     pageTitle: '页面亮度',
     pageHint: '只影响背景与卡片，不动文字',
     textTitle: '文字亮度',
-    textHint: '越高越清晰，越低越柔和，最低 8:1',
+    textHint: '无级可调，越低越柔和；最低 8:1',
     textHintOff: '先选一套配色，两档滑条才会生效',
   },
   en: {
@@ -50,7 +50,7 @@ const MESSAGES = {
     pageTitle: 'Page brightness',
     pageHint: 'Surfaces only — text is untouched',
     textTitle: 'Text brightness',
-    textHint: 'Higher is sharper, lower is softer, never below 8:1',
+    textHint: 'Continuously adjustable, never below 8:1',
     textHintOff: 'Pick a palette first — both sliders apply to it',
   },
 }
@@ -76,8 +76,8 @@ function installRowCss(ctx) {
 
 // ---------------------------------------------------------------- state
 let selection = OFF_ID
-let pageStop = DEFAULT_PAGE_STOP
-let textStop = DEFAULT_TEXT_STOP
+let pageValue = DEFAULT_PAGE_VALUE
+let textValue = DEFAULT_TEXT_VALUE
 let applied = null
 let appliedSignature = null
 let disposeLayer = null
@@ -110,9 +110,13 @@ function writeStorage(key, value) {
   }
 }
 
-function readStopId(key, stops, fallback) {
-  const raw = readStorage(key)
-  return stops.some((stop) => stop.id === raw) ? raw : fallback
+/**
+ * Read a knob from storage. Accepts the numeric values this release writes and
+ * the named stop ids the fixed-stop release wrote, so upgrading keeps the user's
+ * choice instead of resetting it.
+ */
+function readValue(key, range, presets, fallback) {
+  return resolveValue(readStorage(key), range, presets, fallback)
 }
 
 function readStored() {
@@ -122,7 +126,7 @@ function readStored() {
 }
 
 /** Identity of what the current layer represents, so a repeated event does not republish. */
-const signature = () => `${selection}|${pageStop}|${textStop}`
+const signature = () => `${selection}|${pageValue}|${textValue}`
 
 /**
  * Stack the palette's layer with both sliders applied (or dispose it for OFF_ID).
@@ -143,7 +147,7 @@ function push(id) {
   }
   const signatureNow = signature()
   if (applied === id && appliedSignature === signatureNow) return
-  const tokens = tune(palette.tokens, palette, { page: pageStop, text: textStop })
+  const tokens = tune(palette.tokens, palette, { page: pageValue, text: textValue })
   disposeLayer = themeService.overrideTokens(SOURCE, tokens)
   applied = id
   appliedSignature = signatureNow
@@ -161,25 +165,43 @@ function choose(id) {
   announce()
 }
 
-function choosePage(id) {
-  pageStop = id
-  writeStorage(PAGE_KEY, id)
-  reconcile()
+/**
+ * Repainting means rewriting 146 inline custom properties and re-publishing the
+ * theme, so a continuous drag is coalesced into one repaint per animation frame.
+ * The readout still updates immediately — only the theme publish is deferred.
+ */
+let frame = 0
+function reconcileSoon() {
+  if (typeof requestAnimationFrame !== 'function') {
+    reconcile()
+    return
+  }
+  if (frame !== 0) return
+  frame = requestAnimationFrame(() => {
+    frame = 0
+    reconcile()
+  })
+}
+
+function choosePage(value) {
+  pageValue = quantizeValue(value, PAGE_RANGE, DEFAULT_PAGE_VALUE)
+  writeStorage(PAGE_KEY, pageValue)
+  reconcileSoon()
   announce()
 }
 
-function chooseText(id) {
-  textStop = id
-  writeStorage(TEXT_KEY, id)
-  reconcile()
+function chooseText(value) {
+  textValue = quantizeValue(value, TEXT_RANGE, DEFAULT_TEXT_VALUE)
+  writeStorage(TEXT_KEY, textValue)
+  reconcileSoon()
   announce()
 }
 
 const onStorage = (event) => {
   const key = event.key
   if (key === null || key === STORAGE_KEY) selection = readStored()
-  if (key === null || key === PAGE_KEY) pageStop = readStopId(PAGE_KEY, PAGE_STOPS, DEFAULT_PAGE_STOP)
-  if (key === null || key === TEXT_KEY) textStop = readStopId(TEXT_KEY, TEXT_STOPS, DEFAULT_TEXT_STOP)
+  if (key === null || key === PAGE_KEY) pageValue = readValue(PAGE_KEY, PAGE_RANGE, PAGE_PRESETS, DEFAULT_PAGE_VALUE)
+  if (key === null || key === TEXT_KEY) textValue = readValue(TEXT_KEY, TEXT_RANGE, TEXT_PRESETS, DEFAULT_TEXT_VALUE)
   reconcile()
   announce()
 }
@@ -228,14 +250,14 @@ function Cube({ label, hint, colors, selected, onSelect, activeLabel }) {
 }
 
 /**
- * One labelled slider: a native range input stepped over the stop list, so it is
- * draggable, keyboard-operable (arrows / Home / End) and screen-reader friendly
- * without any custom drag code.
+ * One labelled slider over a continuous range.
+ *
+ * Native `input[type=range]`, so dragging, arrow keys (one `step` each),
+ * PageUp/PageDown and Home/End all work without custom drag code. The readout
+ * shows the nearest named landmark plus the real number, so a value between
+ * landmarks still reads as a sentence ("柔和 · 9.6:1").
  */
-function Slider({ label, hint, stops, index, valueText, disabled, onChange }) {
-  const last = Math.max(0, stops.length - 1)
-  const position = Math.max(0, Math.min(last, index))
-  const stop = stops[position]
+function Slider({ label, hint, range, value, name, readout, disabled, onChange }) {
   return h(
     'div',
     { className: `dshEyeThemes_slider${disabled ? ' is-disabled' : ''}` },
@@ -246,22 +268,22 @@ function Slider({ label, hint, stops, index, valueText, disabled, onChange }) {
       h(
         'span',
         { className: 'dshEyeThemes_sliderValue' },
-        labelOf(stop.label),
-        valueText === undefined ? null : h('span', { className: 'dshEyeThemes_sliderUnit' }, ` · ${valueText}`),
+        name,
+        readout === undefined ? null : h('span', { className: 'dshEyeThemes_sliderUnit' }, ` · ${readout}`),
       ),
     ),
     h('input', {
       type: 'range',
       className: 'dshEyeThemes_range',
-      min: 0,
-      max: last,
-      step: 1,
-      value: position,
+      min: range.min,
+      max: range.max,
+      step: range.step,
+      value,
       disabled: disabled === true,
       'aria-label': label,
-      'aria-valuetext': labelOf(stop.label),
+      'aria-valuetext': readout === undefined ? name : `${name} ${readout}`,
       title: hint,
-      onChange: (event) => onChange(stops[Number(event.target.value)]?.id),
+      onChange: (event) => onChange(Number(event.target.value)),
     }),
     h('span', { className: 'dshEyeThemes_sliderHint' }, hint),
   )
@@ -275,16 +297,16 @@ function Slider({ label, hint, stops, index, valueText, disabled, onChange }) {
 function EyeThemesRow(props) {
   const t = props?.t ?? ((key) => MESSAGES.zh[key] ?? key)
   const [selected, setSelected] = React.useState(readStored)
-  const [page, setPage] = React.useState(() => readStopId(PAGE_KEY, PAGE_STOPS, DEFAULT_PAGE_STOP))
-  const [text, setText] = React.useState(() => readStopId(TEXT_KEY, TEXT_STOPS, DEFAULT_TEXT_STOP))
+  const [page, setPage] = React.useState(() => readValue(PAGE_KEY, PAGE_RANGE, PAGE_PRESETS, DEFAULT_PAGE_VALUE))
+  const [text, setText] = React.useState(() => readValue(TEXT_KEY, TEXT_RANGE, TEXT_PRESETS, DEFAULT_TEXT_VALUE))
   const [mode, setMode] = React.useState(currentMode)
 
   React.useEffect(
     () =>
       subscribe(() => {
         setSelected(selection)
-        setPage(pageStop)
-        setText(textStop)
+        setPage(pageValue)
+        setText(textValue)
       }),
     [],
   )
@@ -314,15 +336,13 @@ function EyeThemesRow(props) {
     'var(--dsw-static-neutral-700)',
   ]
 
-  const pageIndex = PAGE_STOPS.findIndex((stop) => stop.id === page)
-  const textIndex = TEXT_STOPS.findIndex((stop) => stop.id === text)
   const active = selected !== OFF_ID
 
-  // Show the contrast the text slider actually lands on, so the stop names stay honest.
+  // Show what each slider actually lands on, so the readout stays honest between landmarks.
   const palette = BY_ID.get(selected)
-  const textValue = palette === undefined
-    ? undefined
-    : `${measure(palette.tokens, palette, { page, text })[mode].primary.toFixed(1)}:1`
+  const measured = palette === undefined ? undefined : measure(palette.tokens, palette, { page, text })[mode]
+  const textReadout = measured === undefined ? undefined : `${measured.primary.toFixed(2)}:1`
+  const pageReadout = `${Math.round(page * 100)}%`
 
   return h(
     'div',
@@ -363,17 +383,20 @@ function EyeThemesRow(props) {
       h(Slider, {
         label: t('pageTitle'),
         hint: t('pageHint'),
-        stops: PAGE_STOPS,
-        index: pageIndex,
+        range: PAGE_RANGE,
+        value: page,
+        name: labelOf(nearestPreset(page, PAGE_PRESETS).label),
+        readout: pageReadout,
         disabled: !active,
         onChange: choosePage,
       }),
       h(Slider, {
         label: t('textTitle'),
         hint: t('textHint'),
-        stops: TEXT_STOPS,
-        index: textIndex,
-        valueText: textValue,
+        range: TEXT_RANGE,
+        value: text,
+        name: labelOf(nearestPreset(text, TEXT_PRESETS).label),
+        readout: textReadout,
         disabled: !active,
         onChange: chooseText,
       }),
@@ -398,8 +421,8 @@ function apply(ctx) {
   ctx.effect(() => {
     const disposers = []
     if (localeService !== null) disposers.push(localeService.register(LOCALE_NS, MESSAGES))
-    pageStop = readStopId(PAGE_KEY, PAGE_STOPS, DEFAULT_PAGE_STOP)
-    textStop = readStopId(TEXT_KEY, TEXT_STOPS, DEFAULT_TEXT_STOP)
+    pageValue = readValue(PAGE_KEY, PAGE_RANGE, PAGE_PRESETS, DEFAULT_PAGE_VALUE)
+    textValue = readValue(TEXT_KEY, TEXT_RANGE, TEXT_PRESETS, DEFAULT_TEXT_VALUE)
     selection = readStored()
     reconcile()
     // Another window may switch the palette or move a slider; localStorage is per origin.
@@ -430,8 +453,10 @@ exports.apply = apply
 exports.inject = inject
 exports.PALETTES = PAYLOAD.map((palette) => ({ id: palette.id, name: palette.name, tagline: palette.tagline }))
 exports.STORAGE_KEYS = { palette: STORAGE_KEY, page: PAGE_KEY, text: TEXT_KEY }
-exports.PAGE_STOPS = PAGE_STOPS
-exports.TEXT_STOPS = TEXT_STOPS
+exports.PAGE_RANGE = PAGE_RANGE
+exports.TEXT_RANGE = TEXT_RANGE
+exports.PAGE_PRESETS = PAGE_PRESETS
+exports.TEXT_PRESETS = TEXT_PRESETS
 exports.OFF_ID = OFF_ID
 exports.EyeThemesRow = EyeThemesRow
 exports.Slider = Slider

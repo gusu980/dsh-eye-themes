@@ -46,14 +46,38 @@ export function lighten(color, t, toward = '#ffffff') {
   return mix(color, toward, t)
 }
 
+/**
+ * WCAG relative luminance from raw 0..255 channels.
+ *
+ * Split out because the tuner bisects a colour toward a luminance target and
+ * would otherwise round-trip through a hex string on every iteration.
+ *
+ * @param red - 0..255 (fractional values allowed).
+ * @param green - 0..255.
+ * @param blue - 0..255.
+ * @returns relative luminance, 0..1.
+ */
+export function luminanceRgb(red, green, blue) {
+  const channel = (value) => {
+    const s = value / 255
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+}
+
 /** WCAG relative luminance (alpha ignored: palettes are opaque where it matters). */
 export function luminance(color) {
-  const [r, g, b] = parse(color).slice(0, 3).map((channel) => {
-    const s = channel / 255
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-  })
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  const cached = LUMINANCE_CACHE.get(color)
+  if (cached !== undefined) return cached
+  const [r, g, b] = parse(color)
+  const value = luminanceRgb(r, g, b)
+  if (LUMINANCE_CACHE.size > 8192) LUMINANCE_CACHE.clear()
+  LUMINANCE_CACHE.set(color, value)
+  return value
 }
+
+/** Repeated colours (palette values, the warm off-white) dominate a tune pass. */
+const LUMINANCE_CACHE = new Map()
 
 /** WCAG contrast ratio between two opaque colors (1..21). */
 export function contrast(a, b) {

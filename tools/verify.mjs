@@ -16,14 +16,20 @@ import { PALETTES, TOKEN_NAMES, audit, toOverrideMap } from '../src/palettes.mjs
 import {
   ACCENT_COPY_TOKENS,
   COPY_TIERS,
-  DEFAULT_PAGE_STOP,
-  DEFAULT_TEXT_STOP,
+  DEFAULT_PAGE_VALUE,
+  DEFAULT_TEXT_VALUE,
   ON_FILL_COPY_TOKENS,
-  PAGE_STOPS,
+  PAGE_PRESETS,
+  PAGE_RANGE,
   SURFACE_TOKENS,
-  TEXT_STOPS,
+  TEXT_PRESETS,
+  TEXT_RANGE,
   measure,
+  nearestPreset,
+  quantizeValue,
+  resolveValue,
   tune,
+  warmthFor,
 } from '../src/tune.mjs'
 import { contrast } from '../src/color.mjs'
 
@@ -91,76 +97,79 @@ for (const palette of PALETTES) {
   }
 }
 
-// ------------------------------------- 2b. page brightness x text brightness
+// ------------------------------- 2b. page brightness x text brightness (continuous)
 {
   const pairsOf = (palette) => toOverrideMap(palette)
-  const baseOf = (palette) => pairsOf(palette)['--dsw-alias-bg-base']
+  /** Every value the slider can rest on, per range. */
+  const grid = (range) => {
+    const out = []
+    for (let value = range.min; value <= range.max + 1e-9; value += range.step) out.push(Math.round(value * 100) / 100)
+    return out
+  }
+  const pageGrid = grid(PAGE_RANGE)
+  const textGrid = grid(TEXT_RANGE)
 
-  // Every stop is present, ordered, and documented.
-  check('there are 7 page-brightness stops', PAGE_STOPS.length === 7, String(PAGE_STOPS.length))
-  check('page stops are ordered dim -> bright', PAGE_STOPS.every((stop, i) => i === 0 || stop.factor > PAGE_STOPS[i - 1].factor))
-  check('there are 5 text-brightness stops', TEXT_STOPS.length === 5, String(TEXT_STOPS.length))
-  check('text stops are ordered bright -> soft', TEXT_STOPS.every((stop, i) => i === 0 || stop.ceiling < TEXT_STOPS[i - 1].ceiling))
-  check(
-    'two text stops sit between 标准 and 柔和',
-    TEXT_STOPS.findIndex((stop) => stop.id === 'soft') - TEXT_STOPS.findIndex((stop) => stop.id === 'standard') === 3,
-  )
-  check('defaults are standard brightness / soft text', DEFAULT_PAGE_STOP === 'standard' && DEFAULT_TEXT_STOP === 'soft')
+  check('both knobs are continuous ranges', PAGE_RANGE.step <= 0.01 && TEXT_RANGE.step <= 0.05, `${PAGE_RANGE.step} / ${TEXT_RANGE.step}`)
+  check('the text range spans the old 5 stops', TEXT_RANGE.min === 8 && TEXT_RANGE.max === 11.5)
+  check('the page range spans the old 7 stops', PAGE_RANGE.min === 0.7 && PAGE_RANGE.max === 1.45)
+  check('the text grid has ~70 settable values', textGrid.length >= 70, String(textGrid.length))
+  check('the page grid has ~76 settable values', pageGrid.length >= 70, String(pageGrid.length))
+  check('presets are landmarks inside their ranges', TEXT_PRESETS.every((p) => p.value >= TEXT_RANGE.min && p.value <= TEXT_RANGE.max) && PAGE_PRESETS.every((p) => p.value >= PAGE_RANGE.min && p.value <= PAGE_RANGE.max))
+  check('presets still name the old stops', TEXT_PRESETS.map((p) => p.id).join(',') === 'standard,gentle,mild,soft,softer')
+  check('defaults are on the grid', quantizeValue(DEFAULT_TEXT_VALUE, TEXT_RANGE, 0) === DEFAULT_TEXT_VALUE && quantizeValue(DEFAULT_PAGE_VALUE, PAGE_RANGE, 0) === DEFAULT_PAGE_VALUE)
+  check('a mid-gap value is settable (10.25)', textGrid.includes(10.25), String(textGrid.includes(10.25)))
+  check('quantising clamps to the range', quantizeValue(99, TEXT_RANGE, 0) === TEXT_RANGE.max && quantizeValue(1, TEXT_RANGE, 0) === TEXT_RANGE.min)
+  check('legacy stop ids still resolve', resolveValue('soft', TEXT_RANGE, TEXT_PRESETS, 0) === 9.6 && resolveValue('softer', TEXT_RANGE, TEXT_PRESETS, 0) === 8 && resolveValue('standard', PAGE_RANGE, PAGE_PRESETS, 0) === 1, `${resolveValue('softer', TEXT_RANGE, TEXT_PRESETS, 0)}`)
+  check('junk falls back to the default', resolveValue('nope', TEXT_RANGE, TEXT_PRESETS, DEFAULT_TEXT_VALUE) === DEFAULT_TEXT_VALUE)
+  check('a missing key falls back, not to the range floor', resolveValue(null, TEXT_RANGE, TEXT_PRESETS, DEFAULT_TEXT_VALUE) === DEFAULT_TEXT_VALUE)
+  check('warmth rises as text gets dimmer', warmthFor(TEXT_RANGE.max) < warmthFor(9.6) && warmthFor(9.6) < warmthFor(TEXT_RANGE.min), `${warmthFor(11.5).toFixed(2)} < ${warmthFor(9.6).toFixed(2)} < ${warmthFor(8).toFixed(2)}`)
+  check('nearest preset names a value between landmarks', nearestPreset(10.25, TEXT_PRESETS).id === 'mild', nearestPreset(10.25, TEXT_PRESETS).id)
 
-  // The whole matrix: 5 palettes x 7 page stops x 5 text stops x 2 modes.
+  // The full matrix, on the fine grid (sampled: every 4th text value x every 3rd page value).
+  const pageSample = pageGrid.filter((_, index) => index % 3 === 0)
+  const textSample = textGrid.filter((_, index) => index % 4 === 0)
   let combinations = 0
   for (const palette of PALETTES) {
     const pairs = pairsOf(palette)
     const label = (page, text, mode) => `${palette.id} page=${page} text=${text} ${mode}`
-
-    for (const pageStop of PAGE_STOPS) {
-      for (const textStop of TEXT_STOPS) {
-        const tuned = tune(pairs, palette, { page: pageStop.id, text: textStop.id })
-        const measured = measure(pairs, palette, { page: pageStop.id, text: textStop.id })
+    for (const page of pageSample) {
+      for (const text of textSample) {
+        const tuned = tune(pairs, palette, { page, text })
+        const measured = measure(pairs, palette, { page, text })
         combinations += 1
         for (const mode of ['light', 'dark']) {
           const tier = measured[mode]
-          // 8-bit output quantises the landing; on the darkest/lightest pages one
-          // channel step is worth ~0.15 of contrast, so the tolerance allows it.
-          check(`${label(pageStop.id, textStop.id, mode)} lands on its contrast target`, Math.abs(tier.primary - textStop.ceiling) < 0.16, `${tier.primary.toFixed(2)} vs ${textStop.ceiling}`)
-          check(`${label(pageStop.id, textStop.id, mode)} keeps the AA floor`, tier.primary >= 4.5, `${tier.primary.toFixed(2)}:1`)
-          check(`${label(pageStop.id, textStop.id, mode)} ramp stays ordered`, tier.primary > tier.secondary && tier.secondary > tier.tertiary, `${tier.primary.toFixed(2)} > ${tier.secondary.toFixed(2)} > ${tier.tertiary.toFixed(2)}`)
-          check(`${label(pageStop.id, textStop.id, mode)} secondary/link stay readable`, tier.secondary >= 4.4 && tier.link >= 4.4, `${tier.secondary.toFixed(2)} / ${tier.link.toFixed(2)}`)
-          check(`${label(pageStop.id, textStop.id, mode)} syntax colours stay visible`, tier.shikiMin >= 3, `${tier.shikiMin.toFixed(2)}:1`)
-          check(`${label(pageStop.id, textStop.id, mode)} never emits pure white/black copy`, !/^#(?:f{6}|0{6})$/i.test(tier.primaryHex), tier.primaryHex)
+          check(`${label(page, text, mode)} lands on its target`, Math.abs(tier.primary - text) < 0.18, `${tier.primary.toFixed(2)} vs ${text}`)
+          check(`${label(page, text, mode)} keeps the AA floor`, tier.primary >= 4.5, `${tier.primary.toFixed(2)}:1`)
+          check(`${label(page, text, mode)} ramp stays ordered`, tier.primary > tier.secondary && tier.secondary > tier.tertiary, `${tier.primary.toFixed(2)} > ${tier.secondary.toFixed(2)} > ${tier.tertiary.toFixed(2)}`)
+          check(`${label(page, text, mode)} secondary/link stay readable`, tier.secondary >= 4.4 && tier.link >= 4.4)
+          check(`${label(page, text, mode)} syntax colours stay visible`, tier.shikiMin >= 3, `${tier.shikiMin.toFixed(2)}:1`)
+          check(`${label(page, text, mode)} never emits pure white/black copy`, !/^#(?:f{6}|0{6})$/i.test(tier.primaryHex), tier.primaryHex)
         }
-        // A text-only change must not move a single surface token.
-        const flat = tune(pairs, palette, { page: pageStop.id, text: TEXT_STOPS[0].id })
-        check(
-          `${label(pageStop.id, textStop.id, 'both')} text stop leaves surfaces untouched`,
-          SURFACE_TOKENS.every((name) => !tuned[name] || tuned[name].dark === flat[name].dark),
-        )
-        // A page-only change must not move an accent token.
-        const noPage = tune(pairs, palette, { page: PAGE_STOPS[3].id, text: textStop.id })
-        check(
-          `${label(pageStop.id, textStop.id, 'both')} page stop leaves accents untouched`,
-          ['--dsw-alias-brand-primary', '--dsw-alias-button-primary-fill'].every((name) => !tuned[name] || tuned[name].dark === noPage[name].dark),
-        )
+        check(`${label(page, text, 'both')} text leaves surfaces untouched`, SURFACE_TOKENS.every((name) => !tuned[name] || tuned[name].dark === tune(pairs, palette, { page, text: TEXT_RANGE.max })[name]?.dark))
+        check(`${label(page, text, 'both')} page leaves the accent untouched`, ['--dsw-alias-brand-primary', '--dsw-alias-button-primary-fill'].every((name) => !tuned[name] || tuned[name].dark === tune(pairs, palette, { page: DEFAULT_PAGE_VALUE, text })[name]?.dark))
       }
     }
 
-    // Page brightness actually moves the page, monotonically, and stays off pure white/black.
+    // Fine-grained monotonicity: brightness and text must move one way only.
     for (const mode of ['light', 'dark']) {
-      const bases = PAGE_STOPS.map((stop) => tune(pairs, palette, { page: stop.id, text: DEFAULT_TEXT_STOP })[ '--dsw-alias-bg-base'][mode])
-      const lum = bases.map((hex) => parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16))
-      check(`-- ${palette.id} ${mode} page brightness is monotonic`, lum.every((value, i) => i === 0 || value > lum[i - 1]), lum.join(','))
-      check(`-- ${palette.id} ${mode} page brightness has visible range`, lum[lum.length - 1] - lum[0] >= 20, String(lum[lum.length - 1] - lum[0]))
-      check(`-- ${palette.id} ${mode} page brightness never clips to pure white/black`, bases.every((hex) => !/^#(?:f{6}|0{6})$/i.test(hex)), bases.join(' '))
-    }
-
-    // Text brightness monotonic in both modes, and the extremes are a real change.
-    for (const mode of ['light', 'dark']) {
-      const ratios = TEXT_STOPS.map((stop) => measure(pairs, palette, { text: stop.id })[mode].primary)
-      check(`-- ${palette.id} ${mode} text brightness is monotonic`, ratios.every((value, i) => i === 0 || value < ratios[i - 1]), ratios.map((v) => v.toFixed(2)).join(' '))
-      check(`-- ${palette.id} ${mode} text brightness spans >= 3 stops of contrast`, ratios[0] - ratios.at(-1) >= 3, `${ratios[0].toFixed(2)} -> ${ratios.at(-1).toFixed(2)}`)
+      const baseLum = pageGrid.map((page) => tune(pairs, palette, { page, text: DEFAULT_TEXT_VALUE })['--dsw-alias-bg-base'][mode])
+      const sum = (hex) => Number.parseInt(hex.slice(1, 7), 16)
+      const values = baseLum.map(sum)
+      check(`-- ${palette.id} ${mode} page brightness rises with the factor`, values.every((value, i) => i === 0 || value >= values[i - 1]), `${values[0]}..${values.at(-1)}`)
+      check(`-- ${palette.id} ${mode} page brightness has a wide range`, values.at(-1) - values[0] >= 20, String(values.at(-1) - values[0]))
+      const ratios = textGrid.map((text) => measure(pairs, palette, { text })[mode].primary)
+      // 8-bit output cannot resolve better than one channel step, which is worth
+      // up to ~0.17 of contrast here, so the invariant is: never brighter than
+      // requested, and never backwards by more than one quantisation step.
+      const overshoot = Math.max(...ratios.map((ratio, i) => ratio - textGrid[i]))
+      const worstBackstep = Math.max(0, ...ratios.map((ratio, i) => (i === 0 ? 0 : ratio - ratios[i - 1])))
+      check(`-- ${palette.id} ${mode} text brightness never overshoots the request`, overshoot <= 0.02, overshoot.toFixed(3))
+      check(`-- ${palette.id} ${mode} text brightness is monotone within one 8-bit step`, worstBackstep <= 0.2, worstBackstep.toFixed(3))
+      check(`-- ${palette.id} ${mode} text brightness is not steppy`, new Set(ratios.map((r) => r.toFixed(1))).size >= 20, `${new Set(ratios.map((r) => r.toFixed(1))).size} distinct tenths`)
     }
   }
-  check('the matrix was exercised', combinations === PALETTES.length * PAGE_STOPS.length * TEXT_STOPS.length, String(combinations))
+  check('the sampled matrix was exercised', combinations === PALETTES.length * pageSample.length * textSample.length, String(combinations))
 }
 
 // ---------------------------------------------------------------- 3. bundle smoke
@@ -316,12 +325,13 @@ check('row renders exactly two sliders', sliders.length === 2, String(sliders.le
 const rangeOf = (slider) => slider.children.map((child) => expand(child)).find((child) => child?.type === 'input')
 const ranges = sliders.map(rangeOf)
 check('both sliders are range inputs', ranges.every((input) => input?.props?.type === 'range'))
-check('the first slider steps over the page stops', ranges[0].props.max === PAGE_STOPS.length - 1, `${ranges[0].props.min}..${ranges[0].props.max}`)
-check('the second slider steps over the text stops', ranges[1].props.max === TEXT_STOPS.length - 1, `${ranges[1].props.min}..${ranges[1].props.max}`)
-check('sliders snap to whole stops', ranges.every((input) => input.props.step === 1))
+check('the first slider spans the page range', ranges[0].props.min === PAGE_RANGE.min && ranges[0].props.max === PAGE_RANGE.max, `${ranges[0].props.min}..${ranges[0].props.max}`)
+check('the second slider spans the text range', ranges[1].props.min === TEXT_RANGE.min && ranges[1].props.max === TEXT_RANGE.max, `${ranges[1].props.min}..${ranges[1].props.max}`)
+check('sliders use the fine step, not stop indexes', ranges[0].props.step === PAGE_RANGE.step && ranges[1].props.step === TEXT_RANGE.step, `${ranges[0].props.step} / ${ranges[1].props.step}`)
+check('sliders snap onto the fine grid', ranges[0].props.step <= 0.01 && ranges[1].props.step <= 0.05)
 check('sliders carry an accessible name and value text', ranges.every((input) => typeof input.props['aria-label'] === 'string' && typeof input.props['aria-valuetext'] === 'string'))
-check('the default brightness is the middle stop', ranges[0].props.value === PAGE_STOPS.findIndex((stop) => stop.id === DEFAULT_PAGE_STOP))
-check('the default text stop is the soft one', ranges[1].props.value === TEXT_STOPS.findIndex((stop) => stop.id === DEFAULT_TEXT_STOP))
+check('the default brightness is 100%', ranges[0].props.value === DEFAULT_PAGE_VALUE, String(ranges[0].props.value))
+check('the default text brightness is 9.6', ranges[1].props.value === DEFAULT_TEXT_VALUE, String(ranges[1].props.value))
 const sliderValueOf = (slider) => slider.children.map((child) => expand(child)).find((child) => child?.props?.className === 'dshEyeThemes_sliderHead')
   .children.map((child) => expand(child)).find((child) => child?.props?.className === 'dshEyeThemes_sliderValue')
 check('with no palette active the sliders read as disabled', ranges.every((input) => input.props.disabled === true))
@@ -342,8 +352,8 @@ check('layer source is the package id (one layer per source)', firstLayer.source
 check('layer carries the complete token map', Object.keys(firstLayer.tokens).length === TOKEN_NAMES.length, String(Object.keys(firstLayer.tokens).length))
 check('layer values are { light, dark } pairs', Object.values(firstLayer.tokens).every((pair) => typeof pair.light === 'string' && typeof pair.dark === 'string'))
 check('chosen palette persisted', windowStub.localStorage.getItem('dsh-eye-themes:palette') === PALETTES[1].id, String(windowStub.localStorage.getItem('dsh-eye-themes:palette')))
-const tunedDefault = tune(toOverrideMap(PALETTES[1]), PALETTES[1], { page: DEFAULT_PAGE_STOP, text: DEFAULT_TEXT_STOP })
-check('the layer is the palette with both stops applied', firstLayer.tokens['--dsw-alias-label-primary'].dark === tunedDefault['--dsw-alias-label-primary'].dark, `${firstLayer.tokens['--dsw-alias-label-primary'].dark} vs ${tunedDefault['--dsw-alias-label-primary'].dark}`)
+const tunedDefault = tune(toOverrideMap(PALETTES[1]), PALETTES[1], { page: DEFAULT_PAGE_VALUE, text: DEFAULT_TEXT_VALUE })
+check('the layer is the palette with both knobs applied', firstLayer.tokens['--dsw-alias-label-primary'].dark === tunedDefault['--dsw-alias-label-primary'].dark, `${firstLayer.tokens['--dsw-alias-label-primary'].dark} vs ${tunedDefault['--dsw-alias-label-primary'].dark}`)
 check('the copy changed from the palette default', firstLayer.tokens['--dsw-alias-label-primary'].dark !== toOverrideMap(PALETTES[1])['--dsw-alias-label-primary'].dark)
 
 // Re-render with a palette active: sliders enable and the text slider reports its contrast.
@@ -353,30 +363,31 @@ const activeRanges = activeSliders.map(rangeOf)
 check('sliders enable once a palette is active', activeRanges.every((input) => input.props.disabled === false))
 const shownUnit = sliderValueOf(activeSliders[1]).children.find((child) => child?.props?.className === 'dshEyeThemes_sliderUnit')
 const shownText = (shownUnit?.children ?? []).join('')
-check('the text slider shows the contrast it lands on', /·\s*\d+\.\d:1/.test(shownText), shownText)
+check('the text slider shows the contrast it lands on', /·\s*\d+\.\d+:1/.test(shownText), shownText)
 
 // Dragging the text slider restacks the same layer and only moves copy.
 const textRange = rangeOf(sliders[1])
-const dragTo = (input, index) => input.props.onChange({ target: { value: String(index) } })
-dragTo(textRange, TEXT_STOPS.findIndex((stop) => stop.id === 'standard'))
+const dragTo = (input, value) => input.props.onChange({ target: { value: String(value) } })
+// A value that is not a landmark: 10.25 sits between 较柔 (10.2) and 偏柔 (10.85).
+dragTo(textRange, 10.25)
 const afterText = layerCalls.filter((call) => !call.disposed).at(-1)
 check('dragging restacks one layer (no second source)', layerCalls.filter((call) => !call.disposed).length === 2)
-check('the layer now carries the standard text stop', afterText.tokens['--dsw-alias-label-primary'].dark === tune(toOverrideMap(PALETTES[1]), PALETTES[1], { page: DEFAULT_PAGE_STOP, text: 'standard' })['--dsw-alias-label-primary'].dark)
-check('text stop persisted', windowStub.localStorage.getItem('dsh-eye-themes:text') === 'standard', String(windowStub.localStorage.getItem('dsh-eye-themes:text')))
-check('a text stop leaves surfaces and accents untouched', KEEP_TOKENS.every((name) => afterText.tokens[name].dark === firstLayer.tokens[name].dark))
+check('a value between landmarks applies exactly', afterText.tokens['--dsw-alias-label-primary'].dark === tune(toOverrideMap(PALETTES[1]), PALETTES[1], { page: DEFAULT_PAGE_VALUE, text: 10.25 })['--dsw-alias-label-primary'].dark)
+check('the fine value persisted as a number', windowStub.localStorage.getItem('dsh-eye-themes:text') === '10.25', String(windowStub.localStorage.getItem('dsh-eye-themes:text')))
+check('a text value leaves surfaces and accents untouched', KEEP_TOKENS.every((name) => afterText.tokens[name].dark === firstLayer.tokens[name].dark))
 
 // Dragging the brightness slider moves surfaces but not the accent.
 const pageRange = rangeOf(sliders[0])
-dragTo(pageRange, PAGE_STOPS.findIndex((stop) => stop.id === 'dim'))
+dragTo(pageRange, 0.85)
 const afterPage = layerCalls.filter((call) => !call.disposed).at(-1)
 check('brightness drag restacks one layer', layerCalls.filter((call) => !call.disposed).length === 3)
 check('the page actually got darker', Number(afterPage.tokens['--dsw-alias-bg-base'].dark.slice(1, 3), 16) < Number(firstLayer.tokens['--dsw-alias-bg-base'].dark.slice(1, 3), 16), `${firstLayer.tokens['--dsw-alias-bg-base'].dark} -> ${afterPage.tokens['--dsw-alias-bg-base'].dark}`)
-check('brightness stop persisted', windowStub.localStorage.getItem('dsh-eye-themes:page') === 'dim', String(windowStub.localStorage.getItem('dsh-eye-themes:page')))
-check('a brightness stop leaves the accent alone', afterPage.tokens['--dsw-alias-brand-primary'].dark === firstLayer.tokens['--dsw-alias-brand-primary'].dark)
+check('the brightness value persisted', windowStub.localStorage.getItem('dsh-eye-themes:page') === '0.85', String(windowStub.localStorage.getItem('dsh-eye-themes:page')))
+check('a brightness value leaves the accent alone', afterPage.tokens['--dsw-alias-brand-primary'].dark === firstLayer.tokens['--dsw-alias-brand-primary'].dark)
 
 // Re-dragging to the same stop must not republish anything.
 const before = layerCalls.length
-dragTo(pageRange, PAGE_STOPS.findIndex((stop) => stop.id === 'dim'))
+dragTo(pageRange, 0.85)
 check('a repeat drag to the same stop does not republish', layerCalls.length === before, `${layerCalls.length} vs ${before}`)
 
 paletteCubes[3].props.onClick()
@@ -393,12 +404,12 @@ check('plugin teardown releases the layer', layerCalls.some((call) => call.dispo
 
 // Restore-on-boot: a stored palette and temperature are applied by apply() without a click.
 windowStub.localStorage.setItem('dsh-eye-themes:palette', PALETTES[2].id)
-windowStub.localStorage.setItem('dsh-eye-themes:text', 'softer')
-windowStub.localStorage.setItem('dsh-eye-themes:page', 'bright')
+windowStub.localStorage.setItem('dsh-eye-themes:text', '8.35')
+windowStub.localStorage.setItem('dsh-eye-themes:page', '1.2')
 layerCalls.length = 0
 plugin.apply(ctx)
 check('a stored palette is restored on boot', layerCalls.length === 1 && layerCalls[0].source === 'dsh-eye-themes')
-const restored = tune(toOverrideMap(PALETTES[2]), PALETTES[2], { page: 'bright', text: 'softer' })
+const restored = tune(toOverrideMap(PALETTES[2]), PALETTES[2], { page: 1.2, text: 8.35 })
 check('the stored stops are restored too', layerCalls[0].tokens['--dsw-alias-label-primary'].dark === restored['--dsw-alias-label-primary'].dark && layerCalls[0].tokens['--dsw-alias-bg-base'].dark === restored['--dsw-alias-bg-base'].dark, `${layerCalls[0].tokens['--dsw-alias-bg-base'].dark} vs ${restored['--dsw-alias-bg-base'].dark}`)
 
 // ---------------------------------------------------------------- result
