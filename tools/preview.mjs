@@ -7,17 +7,21 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { contrast } from '../src/color.mjs'
+import { tune } from '../src/tune.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { palettes, textProfiles, defaultTextProfile } = JSON.parse(readFileSync(join(root, 'lib/palettes.json'), 'utf8'))
-const PROFILE_LABELS = Object.fromEntries(textProfiles.map((profile) => [profile.id, profile.label.zh]))
+const dump = JSON.parse(readFileSync(join(root, 'lib/palettes.json'), 'utf8'))
+const { palettes, pageStops, textStops, defaults } = dump
+const PAGE_LABELS = Object.fromEntries(pageStops.map((stop) => [stop.id, stop.label.zh]))
+const TEXT_LABELS = Object.fromEntries(textStops.map((stop) => [stop.id, stop.label.zh]))
 
 const esc = (value) => String(value).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char])
 
 /** Inline custom properties for one mode of one palette. */
-const tokenStyle = (palette, mode, profile = defaultTextProfile) => {
-  const merged = { ...palette.tokens, ...(palette.text?.[profile] ?? {}) }
-  return Object.entries(merged)
+const tokenStyle = (palette, mode, stops = defaults) => {
+  const tuned = tune(palette.tokens, palette, stops)
+  return Object.entries(tuned)
     .map(([name, pair]) => `${name}:${pair[mode]}`)
     .join(';')
 }
@@ -29,9 +33,9 @@ function card(palette, mode) {
 <figure class="card" data-palette="${palette.id}" data-mode="${mode}">
   <figcaption>
     <span class="cap-name">${esc(label)} <em>${esc(palette.name.en)}</em></span>
-    <span class="cap-mode">${mode === 'light' ? '浅色' : '深色'} · 文字${esc(PROFILE_LABELS[defaultTextProfile])} · ${esc(palette.tagline.zh)}</span>
+    <span class="cap-mode">${mode === 'light' ? '浅色' : '深色'} · ${esc(palette.tagline.zh)}</span>
   </figcaption>
-  <div class="app" style="${tokenStyle(palette, mode, defaultTextProfile)}">
+  <div class="app" style="${tokenStyle(palette, mode)}">
     <div class="side">
       <div class="side-brand">DeepSeek</div>
       <div class="nav is-active">新建会话</div>
@@ -77,24 +81,59 @@ theme.<span class="tok-fn">overrideTokens</span>(<span class="tok-str">"dsh-eye-
 </figure>`
 }
 
-/** One palette x three temperatures, dark mode, body copy sample. */
-function tiersGrid() {
+/** Body copy sample on a given surface, with the contrast it actually lands on. */
+function cell(palette, mode, stops) {
+  const tuned = tune(palette.tokens, palette, stops)
+  const bg = tuned['--dsw-alias-bg-base'][mode]
+  const ink = tuned['--dsw-alias-label-primary'][mode]
+  const secondary = tuned['--dsw-alias-label-secondary'][mode]
+  const measured = measureText(tuned, mode)
+  return { bg, ink, secondary, measured, hex: ink }
+}
+
+/** WCAG ratio between two hex colours, for the caption. */
+function measureText(tuned, mode) {
+  const bg = tuned['--dsw-alias-bg-base'][mode]
+  const ink = tuned['--dsw-alias-label-primary'][mode]
+  return contrast(ink, bg)
+}
+
+/** Text stops x palettes, dark mode. */
+function textGrid() {
   return palettes
     .map((palette) => {
-      const cells = textProfiles
-        .map((profile) => {
-          const audit = palette.textAudit.find((row) => row.profile === profile.id).dark
-          const ink = palette.text[profile.id]['--dsw-alias-label-primary'].dark
-          const secondary = palette.text[profile.id]['--dsw-alias-label-secondary'].dark
-          return `<div class="tcell" style="background:${palette.tokens['--dsw-alias-bg-base'].dark}">
-            <div class="tname">${esc(PROFILE_LABELS[profile.id])}</div>
-            <div class="tsample" style="color:${ink}">正文示例 Body text ${audit.primary.toFixed(2)}:1</div>
-            <div class="tsample2" style="color:${secondary}">次要说明 secondary ${audit.secondary.toFixed(2)}:1</div>
+      const cells = textStops
+        .map((stop) => {
+          const { bg, ink, secondary, measured } = cell(palette, 'dark', { page: defaults.page, text: stop.id })
+          return `<div class="tcell" style="background:${bg}">
+            <div class="tname">${esc(TEXT_LABELS[stop.id])}</div>
+            <div class="tsample" style="color:${ink}">正文 Body ${measured.toFixed(2)}:1</div>
+            <div class="tsample2" style="color:${secondary}">次要 secondary</div>
             <div class="thex">${ink}</div>
           </div>`
         })
         .join('')
       return `<div class="trow"><div class="tpal">${esc(palette.name.zh)}<em>${esc(palette.name.en)}</em></div><div class="tcells">${cells}</div></div>`
+    })
+    .join('')
+}
+
+/** Page stops x two modes, one representative palette. */
+function pageGrid() {
+  const palette = palettes[0]
+  return ['dark', 'light']
+    .map((mode) => {
+      const cells = pageStops
+        .map((stop) => {
+          const { bg, ink, measured } = cell(palette, mode, { page: stop.id, text: defaults.text })
+          return `<div class="tcell" style="background:${bg}">
+            <div class="tname">${esc(PAGE_LABELS[stop.id])}</div>
+            <div class="tsample" style="color:${ink}">正文 ${measured.toFixed(2)}:1</div>
+            <div class="thex">${bg}</div>
+          </div>`
+        })
+        .join('')
+      return `<div class="trow"><div class="tpal">${mode === 'dark' ? '深色' : '浅色'}<em>页面亮度</em></div><div class="tcells tcells7">${cells}</div></div>`
     })
     .join('')
 }
@@ -146,13 +185,14 @@ const html = `<!doctype html>
   .hex { padding: 0 4px 2px; color: #a0a0a6; font-size: 10.5px; font-family: ui-monospace, Menlo, monospace; }
   h2 { font-size: 16px; font-weight: 600; margin: 30px 0 4px; }
   .temps { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
-  .trow { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: stretch; }
+  .trow { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: stretch; }
   .tpal { align-self: center; font-size: 13px; font-weight: 600; }
   .tpal em { display: block; font-weight: 400; color: #8a8a90; font-style: normal; font-size: 11px; }
-  .tcells { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tcells { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .tcells7 { grid-template-columns: repeat(7, 1fr); }
   .tcell { border-radius: 10px; padding: 10px 12px; border: .5px solid rgba(128,128,128,.25); }
   .tname { font-size: 10.5px; letter-spacing: .04em; opacity: .55; margin-bottom: 6px; }
-  .tsample { font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .tsample { font-size: 13px; line-height: 1.45; font-variant-numeric: tabular-nums; }
   .tsample2 { font-size: 12px; line-height: 1.5; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .thex { margin-top: 6px; font-size: 10px; font-family: ui-monospace, Menlo, monospace; opacity: .5; }
 </style></head>
@@ -164,10 +204,16 @@ ${palettes.map((palette) => card(palette, 'light')).join('\n')}
 ${palettes.map((palette) => card(palette, 'dark')).join('\n')}
 </div>
 
-<h2>文字温度（深色档下的正文）</h2>
-<p class="lede">同一套配色的三种文字温度：色温越软，白色越暖、越暗，正文对比度从 11.5 收到 8，但始终不低于 7。</p>
+<h2>文字亮度：5 档（深色模式下的正文）</h2>
+<p class="lede">滑条 5 档，正文对比度 11.5 → 8.0，「标准」和「柔和」之间补了两档，不会一跳就很淡。每一档都按目标对比度重新落色，层级不会倒挂。</p>
 <div class="temps">
-${tiersGrid()}
+${textGrid()}
+</div>
+
+<h2>页面亮度：7 档（宣纸，浅色 / 深色各一条）</h2>
+<p class="lede">只动背景与卡片，不动强调色；文字会跟着重新落色，所以对比度保持在该档的目标值。浅色页面已经很接近白，往「亮」只能走一小段，往「暗」可以走很远。</p>
+<div class="temps">
+${pageGrid()}
 </div>
 </body></html>`
 

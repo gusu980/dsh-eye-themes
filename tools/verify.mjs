@@ -12,16 +12,19 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { PALETTES, TOKEN_NAMES, audit, toOverrideMap } from '../src/palettes.mjs'
 import {
-  DEFAULT_TEXT_PROFILE,
-  PALETTES,
-  TEXT_PROFILES,
-  TOKEN_NAMES,
-  audit,
-  textAudit,
-  toOverrideMap,
-  toTextOverrideMaps,
-} from '../src/palettes.mjs'
+  ACCENT_COPY_TOKENS,
+  COPY_TIERS,
+  DEFAULT_PAGE_STOP,
+  DEFAULT_TEXT_STOP,
+  ON_FILL_COPY_TOKENS,
+  PAGE_STOPS,
+  SURFACE_TOKENS,
+  TEXT_STOPS,
+  measure,
+  tune,
+} from '../src/tune.mjs'
 import { contrast } from '../src/color.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -88,39 +91,77 @@ for (const palette of PALETTES) {
   }
 }
 
-// ------------------------------------------------- 2b. text temperature profiles
-for (const palette of PALETTES) {
-  const maps = toTextOverrideMaps(palette)
-  check(`${palette.id} carries all ${TEXT_PROFILES.length} text temperatures`, TEXT_PROFILES.every((profile) => maps[profile.id] !== undefined))
-  for (const row of textAudit(palette)) {
-    const label = `${palette.id}/${row.profile}`
-    for (const mode of ['light', 'dark']) {
-      const tier = row[mode]
-      // The ceiling is a glare guard, so it only binds where copy is lighter than
-      // its surface. A light theme's dark copy keeps its designed contrast.
-      if (mode === 'dark') {
-        check(`${label}/${mode} primary stays under the ceiling`, tier.primary <= row.ceiling + 0.01, `${tier.primary.toFixed(2)} <= ${row.ceiling}`)
-      } else {
-        check(`${label}/${mode} keeps the light-theme contrast`, tier.primary >= 7, `${tier.primary.toFixed(2)}:1`)
+// ------------------------------------- 2b. page brightness x text brightness
+{
+  const pairsOf = (palette) => toOverrideMap(palette)
+  const baseOf = (palette) => pairsOf(palette)['--dsw-alias-bg-base']
+
+  // Every stop is present, ordered, and documented.
+  check('there are 7 page-brightness stops', PAGE_STOPS.length === 7, String(PAGE_STOPS.length))
+  check('page stops are ordered dim -> bright', PAGE_STOPS.every((stop, i) => i === 0 || stop.factor > PAGE_STOPS[i - 1].factor))
+  check('there are 5 text-brightness stops', TEXT_STOPS.length === 5, String(TEXT_STOPS.length))
+  check('text stops are ordered bright -> soft', TEXT_STOPS.every((stop, i) => i === 0 || stop.ceiling < TEXT_STOPS[i - 1].ceiling))
+  check(
+    'two text stops sit between 标准 and 柔和',
+    TEXT_STOPS.findIndex((stop) => stop.id === 'soft') - TEXT_STOPS.findIndex((stop) => stop.id === 'standard') === 3,
+  )
+  check('defaults are standard brightness / soft text', DEFAULT_PAGE_STOP === 'standard' && DEFAULT_TEXT_STOP === 'soft')
+
+  // The whole matrix: 5 palettes x 7 page stops x 5 text stops x 2 modes.
+  let combinations = 0
+  for (const palette of PALETTES) {
+    const pairs = pairsOf(palette)
+    const label = (page, text, mode) => `${palette.id} page=${page} text=${text} ${mode}`
+
+    for (const pageStop of PAGE_STOPS) {
+      for (const textStop of TEXT_STOPS) {
+        const tuned = tune(pairs, palette, { page: pageStop.id, text: textStop.id })
+        const measured = measure(pairs, palette, { page: pageStop.id, text: textStop.id })
+        combinations += 1
+        for (const mode of ['light', 'dark']) {
+          const tier = measured[mode]
+          // 8-bit output quantises the landing; on the darkest/lightest pages one
+          // channel step is worth ~0.15 of contrast, so the tolerance allows it.
+          check(`${label(pageStop.id, textStop.id, mode)} lands on its contrast target`, Math.abs(tier.primary - textStop.ceiling) < 0.16, `${tier.primary.toFixed(2)} vs ${textStop.ceiling}`)
+          check(`${label(pageStop.id, textStop.id, mode)} keeps the AA floor`, tier.primary >= 4.5, `${tier.primary.toFixed(2)}:1`)
+          check(`${label(pageStop.id, textStop.id, mode)} ramp stays ordered`, tier.primary > tier.secondary && tier.secondary > tier.tertiary, `${tier.primary.toFixed(2)} > ${tier.secondary.toFixed(2)} > ${tier.tertiary.toFixed(2)}`)
+          check(`${label(pageStop.id, textStop.id, mode)} secondary/link stay readable`, tier.secondary >= 4.4 && tier.link >= 4.4, `${tier.secondary.toFixed(2)} / ${tier.link.toFixed(2)}`)
+          check(`${label(pageStop.id, textStop.id, mode)} syntax colours stay visible`, tier.shikiMin >= 3, `${tier.shikiMin.toFixed(2)}:1`)
+          check(`${label(pageStop.id, textStop.id, mode)} never emits pure white/black copy`, !/^#(?:f{6}|0{6})$/i.test(tier.primaryHex), tier.primaryHex)
+        }
+        // A text-only change must not move a single surface token.
+        const flat = tune(pairs, palette, { page: pageStop.id, text: TEXT_STOPS[0].id })
+        check(
+          `${label(pageStop.id, textStop.id, 'both')} text stop leaves surfaces untouched`,
+          SURFACE_TOKENS.every((name) => !tuned[name] || tuned[name].dark === flat[name].dark),
+        )
+        // A page-only change must not move an accent token.
+        const noPage = tune(pairs, palette, { page: PAGE_STOPS[3].id, text: textStop.id })
+        check(
+          `${label(pageStop.id, textStop.id, 'both')} page stop leaves accents untouched`,
+          ['--dsw-alias-brand-primary', '--dsw-alias-button-primary-fill'].every((name) => !tuned[name] || tuned[name].dark === noPage[name].dark),
+        )
       }
-      check(`${label}/${mode} primary keeps the AA floor`, tier.primary >= 4.5, `${tier.primary.toFixed(2)}:1`)
-      check(`${label}/${mode} secondary keeps the AA floor`, tier.secondary >= 4.5, `${tier.secondary.toFixed(2)}:1`)
-      check(`${label}/${mode} tertiary keeps the legibility floor`, tier.tertiary >= 4, `${tier.tertiary.toFixed(2)}:1`)
-      check(`${label}/${mode} link keeps the AA floor`, tier.link >= 4.5, `${tier.link.toFixed(2)}:1`)
-      check(`${label}/${mode} ramp stays ordered primary > secondary > tertiary`, tier.primary > tier.secondary && tier.secondary > tier.tertiary, `${tier.primary.toFixed(2)} > ${tier.secondary.toFixed(2)} > ${tier.tertiary.toFixed(2)}`)
+    }
+
+    // Page brightness actually moves the page, monotonically, and stays off pure white/black.
+    for (const mode of ['light', 'dark']) {
+      const bases = PAGE_STOPS.map((stop) => tune(pairs, palette, { page: stop.id, text: DEFAULT_TEXT_STOP })[ '--dsw-alias-bg-base'][mode])
+      const lum = bases.map((hex) => parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16))
+      check(`-- ${palette.id} ${mode} page brightness is monotonic`, lum.every((value, i) => i === 0 || value > lum[i - 1]), lum.join(','))
+      check(`-- ${palette.id} ${mode} page brightness has visible range`, lum[lum.length - 1] - lum[0] >= 20, String(lum[lum.length - 1] - lum[0]))
+      check(`-- ${palette.id} ${mode} page brightness never clips to pure white/black`, bases.every((hex) => !/^#(?:f{6}|0{6})$/i.test(hex)), bases.join(' '))
+    }
+
+    // Text brightness monotonic in both modes, and the extremes are a real change.
+    for (const mode of ['light', 'dark']) {
+      const ratios = TEXT_STOPS.map((stop) => measure(pairs, palette, { text: stop.id })[mode].primary)
+      check(`-- ${palette.id} ${mode} text brightness is monotonic`, ratios.every((value, i) => i === 0 || value < ratios[i - 1]), ratios.map((v) => v.toFixed(2)).join(' '))
+      check(`-- ${palette.id} ${mode} text brightness spans >= 3 stops of contrast`, ratios[0] - ratios.at(-1) >= 3, `${ratios[0].toFixed(2)} -> ${ratios.at(-1).toFixed(2)}`)
     }
   }
-  // The whole point of the feature: darker profiles actually dim the copy.
-  const auditRows = textAudit(palette)
-  const byId = Object.fromEntries(auditRows.map((row) => [row.profile, row]))
-  check(`-- ${palette.id} softer dims dark copy more than standard`, byId.softer.dark.primary < byId.standard.dark.primary, `${byId.softer.dark.primary.toFixed(2)} < ${byId.standard.dark.primary.toFixed(2)}`)
-  check(`-- ${palette.id} soft dims dark copy more than standard`, byId.soft.dark.primary < byId.standard.dark.primary, `${byId.soft.dark.primary.toFixed(2)} < ${byId.standard.dark.primary.toFixed(2)}`)
-  // Light themes: dark copy is never re-hued or dimmed.
-  const raw = toOverrideMap(palette)['--dsw-alias-label-primary'].light
-  check(`-- ${palette.id} leaves light-theme body copy untouched`, byId.softer.light.primaryHex === raw, `${byId.softer.light.primaryHex} vs ${raw}`)
+  check('the matrix was exercised', combinations === PALETTES.length * PAGE_STOPS.length * TEXT_STOPS.length, String(combinations))
 }
-
-check('default text temperature is the softened one', DEFAULT_TEXT_PROFILE === 'soft', DEFAULT_TEXT_PROFILE)
 
 // ---------------------------------------------------------------- 3. bundle smoke
 /** Surfaces and accents must never move when only the text temperature changes. */
@@ -268,19 +309,29 @@ check('each cube shows its palette name', cubes.slice(0, 5).every((cube) => {
   return typeof label?.children[0] === 'string' && label.children[0].length > 0
 }))
 
-// The temperature segmented control renders one pill per profile.
-const tempRow = tree.children.find((child) => child?.props?.className === 'dshEyeThemes_temperature')
-const tiersWrap = tempRow.children.map((child) => expand(child)).find((child) => child?.props?.className === 'dshEyeThemes_tiers')
-const tiers = tiersWrap.children.map((child) => expand(child))
-check('row renders one pill per text temperature', tiers.length === TEXT_PROFILES.length, String(tiers.length))
-check('pills are labelled buttons with aria-pressed', tiers.every((tier) => tier.type === 'button' && typeof tier.props['aria-pressed'] === 'boolean'))
-check('the default pill is selected', tiers[TEXT_PROFILES.findIndex((profile) => profile.id === DEFAULT_TEXT_PROFILE)].props['aria-pressed'] === true)
-const hintText = () => {
+// The two sliders render as stepped native range inputs.
+const slidersWrap = tree.children.find((child) => child?.props?.className === 'dshEyeThemes_sliders')
+const sliders = slidersWrap.children.map((child) => expand(child))
+check('row renders exactly two sliders', sliders.length === 2, String(sliders.length))
+const rangeOf = (slider) => slider.children.map((child) => expand(child)).find((child) => child?.type === 'input')
+const ranges = sliders.map(rangeOf)
+check('both sliders are range inputs', ranges.every((input) => input?.props?.type === 'range'))
+check('the first slider steps over the page stops', ranges[0].props.max === PAGE_STOPS.length - 1, `${ranges[0].props.min}..${ranges[0].props.max}`)
+check('the second slider steps over the text stops', ranges[1].props.max === TEXT_STOPS.length - 1, `${ranges[1].props.min}..${ranges[1].props.max}`)
+check('sliders snap to whole stops', ranges.every((input) => input.props.step === 1))
+check('sliders carry an accessible name and value text', ranges.every((input) => typeof input.props['aria-label'] === 'string' && typeof input.props['aria-valuetext'] === 'string'))
+check('the default brightness is the middle stop', ranges[0].props.value === PAGE_STOPS.findIndex((stop) => stop.id === DEFAULT_PAGE_STOP))
+check('the default text stop is the soft one', ranges[1].props.value === TEXT_STOPS.findIndex((stop) => stop.id === DEFAULT_TEXT_STOP))
+const sliderValueOf = (slider) => slider.children.map((child) => expand(child)).find((child) => child?.props?.className === 'dshEyeThemes_sliderHead')
+  .children.map((child) => expand(child)).find((child) => child?.props?.className === 'dshEyeThemes_sliderValue')
+check('with no palette active the sliders read as disabled', ranges.every((input) => input.props.disabled === true))
+
+const hintOf = (id) => {
   const row = expand(component({ t: (key) => key }))
-  const temp = row.children.find((child) => child?.props?.className === 'dshEyeThemes_temperature')
-  return temp.children.map((child) => expand(child))[0].children[1].children[0]
+  return row.children.find((child) => child?.props?.className === 'dshEyeThemes_header').children
+    .map((child) => expand(child)).find((child) => child?.props?.className === 'dshEyeThemes_hint').children[0]
 }
-check('with no palette active the hint asks for one first', hintText() === 'textHintOff', String(hintText()))
+check('with no palette active the hint asks for one first', hintOf() === 'textHintOff', String(hintOf()))
 
 // Selecting a palette stacks one layer with the full token map; selecting another replaces it.
 const paletteCubes = cubes.slice(0, 5)
@@ -291,22 +342,45 @@ check('layer source is the package id (one layer per source)', firstLayer.source
 check('layer carries the complete token map', Object.keys(firstLayer.tokens).length === TOKEN_NAMES.length, String(Object.keys(firstLayer.tokens).length))
 check('layer values are { light, dark } pairs', Object.values(firstLayer.tokens).every((pair) => typeof pair.light === 'string' && typeof pair.dark === 'string'))
 check('chosen palette persisted', windowStub.localStorage.getItem('dsh-eye-themes:palette') === PALETTES[1].id, String(windowStub.localStorage.getItem('dsh-eye-themes:palette')))
+const tunedDefault = tune(toOverrideMap(PALETTES[1]), PALETTES[1], { page: DEFAULT_PAGE_STOP, text: DEFAULT_TEXT_STOP })
+check('the layer is the palette with both stops applied', firstLayer.tokens['--dsw-alias-label-primary'].dark === tunedDefault['--dsw-alias-label-primary'].dark, `${firstLayer.tokens['--dsw-alias-label-primary'].dark} vs ${tunedDefault['--dsw-alias-label-primary'].dark}`)
+check('the copy changed from the palette default', firstLayer.tokens['--dsw-alias-label-primary'].dark !== toOverrideMap(PALETTES[1])['--dsw-alias-label-primary'].dark)
 
-const softText = PALETTES[1].text?.[DEFAULT_TEXT_PROFILE] ?? toTextOverrideMaps(PALETTES[1])[DEFAULT_TEXT_PROFILE]
-check('the layer carries the default text temperature', firstLayer.tokens['--dsw-alias-label-primary'].dark === softText['--dsw-alias-label-primary'].dark, `${firstLayer.tokens['--dsw-alias-label-primary'].dark} vs ${softText['--dsw-alias-label-primary'].dark}`)
-check('tempered copy differs from the palette default', firstLayer.tokens['--dsw-alias-label-primary'].dark !== toOverrideMap(PALETTES[1])['--dsw-alias-label-primary'].dark)
+// Re-render with a palette active: sliders enable and the text slider reports its contrast.
+const activeTree = expand(component({ t: (key) => key }))
+const activeSliders = activeTree.children.find((child) => child?.props?.className === 'dshEyeThemes_sliders').children.map((child) => expand(child))
+const activeRanges = activeSliders.map(rangeOf)
+check('sliders enable once a palette is active', activeRanges.every((input) => input.props.disabled === false))
+const shownUnit = sliderValueOf(activeSliders[1]).children.find((child) => child?.props?.className === 'dshEyeThemes_sliderUnit')
+const shownText = (shownUnit?.children ?? []).join('')
+check('the text slider shows the contrast it lands on', /·\s*\d+\.\d:1/.test(shownText), shownText)
 
-// Choosing a temperature replaces the same layer: one source, one stack.
-const standardTier = tiers[TEXT_PROFILES.findIndex((profile) => profile.id === 'standard')]
-standardTier.props.onClick()
-const afterTemperature = layerCalls.filter((call) => !call.disposed).at(-1)
-check('changing temperature restacks one layer (no second source)', layerCalls.filter((call) => !call.disposed).length === 2)
-check('the layer now carries the standard temperature', afterTemperature.tokens['--dsw-alias-label-primary'].dark === toTextOverrideMaps(PALETTES[1]).standard['--dsw-alias-label-primary'].dark)
-check('temperature choice persisted', windowStub.localStorage.getItem('dsh-eye-themes:text') === 'standard', String(windowStub.localStorage.getItem('dsh-eye-themes:text')))
-check('non-copy tokens are untouched by a temperature change', KEEP_TOKENS.every((name) => afterTemperature.tokens[name].dark === toOverrideMap(PALETTES[1])[name].dark))
+// Dragging the text slider restacks the same layer and only moves copy.
+const textRange = rangeOf(sliders[1])
+const dragTo = (input, index) => input.props.onChange({ target: { value: String(index) } })
+dragTo(textRange, TEXT_STOPS.findIndex((stop) => stop.id === 'standard'))
+const afterText = layerCalls.filter((call) => !call.disposed).at(-1)
+check('dragging restacks one layer (no second source)', layerCalls.filter((call) => !call.disposed).length === 2)
+check('the layer now carries the standard text stop', afterText.tokens['--dsw-alias-label-primary'].dark === tune(toOverrideMap(PALETTES[1]), PALETTES[1], { page: DEFAULT_PAGE_STOP, text: 'standard' })['--dsw-alias-label-primary'].dark)
+check('text stop persisted', windowStub.localStorage.getItem('dsh-eye-themes:text') === 'standard', String(windowStub.localStorage.getItem('dsh-eye-themes:text')))
+check('a text stop leaves surfaces and accents untouched', KEEP_TOKENS.every((name) => afterText.tokens[name].dark === firstLayer.tokens[name].dark))
+
+// Dragging the brightness slider moves surfaces but not the accent.
+const pageRange = rangeOf(sliders[0])
+dragTo(pageRange, PAGE_STOPS.findIndex((stop) => stop.id === 'dim'))
+const afterPage = layerCalls.filter((call) => !call.disposed).at(-1)
+check('brightness drag restacks one layer', layerCalls.filter((call) => !call.disposed).length === 3)
+check('the page actually got darker', Number(afterPage.tokens['--dsw-alias-bg-base'].dark.slice(1, 3), 16) < Number(firstLayer.tokens['--dsw-alias-bg-base'].dark.slice(1, 3), 16), `${firstLayer.tokens['--dsw-alias-bg-base'].dark} -> ${afterPage.tokens['--dsw-alias-bg-base'].dark}`)
+check('brightness stop persisted', windowStub.localStorage.getItem('dsh-eye-themes:page') === 'dim', String(windowStub.localStorage.getItem('dsh-eye-themes:page')))
+check('a brightness stop leaves the accent alone', afterPage.tokens['--dsw-alias-brand-primary'].dark === firstLayer.tokens['--dsw-alias-brand-primary'].dark)
+
+// Re-dragging to the same stop must not republish anything.
+const before = layerCalls.length
+dragTo(pageRange, PAGE_STOPS.findIndex((stop) => stop.id === 'dim'))
+check('a repeat drag to the same stop does not republish', layerCalls.length === before, `${layerCalls.length} vs ${before}`)
 
 paletteCubes[3].props.onClick()
-check('switching palettes replaces the layer instead of stacking', layerCalls.filter((call) => !call.disposed).length === 3 && layerCalls[1].disposed !== true)
+check('switching palettes replaces the layer instead of stacking', layerCalls.filter((call) => !call.disposed).length === 4 && layerCalls[1].disposed !== true)
 cubes[5].props.onClick()
 check('default disposes the layer', layerCalls.some((call) => call.disposed === true))
 check('default choice persisted', windowStub.localStorage.getItem('dsh-eye-themes:palette') === 'default')
@@ -320,13 +394,12 @@ check('plugin teardown releases the layer', layerCalls.some((call) => call.dispo
 // Restore-on-boot: a stored palette and temperature are applied by apply() without a click.
 windowStub.localStorage.setItem('dsh-eye-themes:palette', PALETTES[2].id)
 windowStub.localStorage.setItem('dsh-eye-themes:text', 'softer')
+windowStub.localStorage.setItem('dsh-eye-themes:page', 'bright')
 layerCalls.length = 0
 plugin.apply(ctx)
 check('a stored palette is restored on boot', layerCalls.length === 1 && layerCalls[0].source === 'dsh-eye-themes')
-check(
-  'the stored temperature is restored too',
-  layerCalls[0].tokens['--dsw-alias-label-primary'].dark === toTextOverrideMaps(PALETTES[2]).softer['--dsw-alias-label-primary'].dark,
-)
+const restored = tune(toOverrideMap(PALETTES[2]), PALETTES[2], { page: 'bright', text: 'softer' })
+check('the stored stops are restored too', layerCalls[0].tokens['--dsw-alias-label-primary'].dark === restored['--dsw-alias-label-primary'].dark && layerCalls[0].tokens['--dsw-alias-bg-base'].dark === restored['--dsw-alias-bg-base'].dark, `${layerCalls[0].tokens['--dsw-alias-bg-base'].dark} vs ${restored['--dsw-alias-bg-base'].dark}`)
 
 // ---------------------------------------------------------------- result
 console.log('')
