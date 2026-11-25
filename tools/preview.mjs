@@ -9,15 +9,18 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { palettes } = JSON.parse(readFileSync(join(root, 'lib/palettes.json'), 'utf8'))
+const { palettes, textProfiles, defaultTextProfile } = JSON.parse(readFileSync(join(root, 'lib/palettes.json'), 'utf8'))
+const PROFILE_LABELS = Object.fromEntries(textProfiles.map((profile) => [profile.id, profile.label.zh]))
 
 const esc = (value) => String(value).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char])
 
 /** Inline custom properties for one mode of one palette. */
-const tokenStyle = (palette, mode) =>
-  Object.entries(palette.tokens)
+const tokenStyle = (palette, mode, profile = defaultTextProfile) => {
+  const merged = { ...palette.tokens, ...(palette.text?.[profile] ?? {}) }
+  return Object.entries(merged)
     .map(([name, pair]) => `${name}:${pair[mode]}`)
     .join(';')
+}
 
 function card(palette, mode) {
   const t = (name) => palette.tokens[name][mode]
@@ -26,9 +29,9 @@ function card(palette, mode) {
 <figure class="card" data-palette="${palette.id}" data-mode="${mode}">
   <figcaption>
     <span class="cap-name">${esc(label)} <em>${esc(palette.name.en)}</em></span>
-    <span class="cap-mode">${mode === 'light' ? '浅色' : '深色'} · ${esc(palette.tagline.zh)}</span>
+    <span class="cap-mode">${mode === 'light' ? '浅色' : '深色'} · 文字${esc(PROFILE_LABELS[defaultTextProfile])} · ${esc(palette.tagline.zh)}</span>
   </figcaption>
-  <div class="app" style="${tokenStyle(palette, mode)}">
+  <div class="app" style="${tokenStyle(palette, mode, defaultTextProfile)}">
     <div class="side">
       <div class="side-brand">DeepSeek</div>
       <div class="nav is-active">新建会话</div>
@@ -72,6 +75,28 @@ theme.<span class="tok-fn">overrideTokens</span>(<span class="tok-str">"dsh-eye-
   </div>
   <div class="hex">base ${t('--dsw-alias-bg-base')} · ink ${t('--dsw-alias-label-primary')} · accent ${t('--dsw-alias-brand-primary')}</div>
 </figure>`
+}
+
+/** One palette x three temperatures, dark mode, body copy sample. */
+function tiersGrid() {
+  return palettes
+    .map((palette) => {
+      const cells = textProfiles
+        .map((profile) => {
+          const audit = palette.textAudit.find((row) => row.profile === profile.id).dark
+          const ink = palette.text[profile.id]['--dsw-alias-label-primary'].dark
+          const secondary = palette.text[profile.id]['--dsw-alias-label-secondary'].dark
+          return `<div class="tcell" style="background:${palette.tokens['--dsw-alias-bg-base'].dark}">
+            <div class="tname">${esc(PROFILE_LABELS[profile.id])}</div>
+            <div class="tsample" style="color:${ink}">正文示例 Body text ${audit.primary.toFixed(2)}:1</div>
+            <div class="tsample2" style="color:${secondary}">次要说明 secondary ${audit.secondary.toFixed(2)}:1</div>
+            <div class="thex">${ink}</div>
+          </div>`
+        })
+        .join('')
+      return `<div class="trow"><div class="tpal">${esc(palette.name.zh)}<em>${esc(palette.name.en)}</em></div><div class="tcells">${cells}</div></div>`
+    })
+    .join('')
 }
 
 const html = `<!doctype html>
@@ -119,6 +144,17 @@ const html = `<!doctype html>
   .composer b { color: var(--dsw-alias-brand-text); background: var(--dsw-alias-brand-primary); border-radius: 7px; padding: 3px 10px; font-size: 11.5px; font-weight: 500; }
   .ratios { display: flex; gap: 12px; padding: 8px 4px 2px; color: #6b6b70; font-size: 11px; font-variant-numeric: tabular-nums; }
   .hex { padding: 0 4px 2px; color: #a0a0a6; font-size: 10.5px; font-family: ui-monospace, Menlo, monospace; }
+  h2 { font-size: 16px; font-weight: 600; margin: 30px 0 4px; }
+  .temps { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+  .trow { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: stretch; }
+  .tpal { align-self: center; font-size: 13px; font-weight: 600; }
+  .tpal em { display: block; font-weight: 400; color: #8a8a90; font-style: normal; font-size: 11px; }
+  .tcells { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tcell { border-radius: 10px; padding: 10px 12px; border: .5px solid rgba(128,128,128,.25); }
+  .tname { font-size: 10.5px; letter-spacing: .04em; opacity: .55; margin-bottom: 6px; }
+  .tsample { font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .tsample2 { font-size: 12px; line-height: 1.5; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .thex { margin-top: 6px; font-size: 10px; font-family: ui-monospace, Menlo, monospace; opacity: .5; }
 </style></head>
 <body>
 <h1>dsh-eye-themes · 5 套护眼配色</h1>
@@ -126,6 +162,12 @@ const html = `<!doctype html>
 <div class="grid">
 ${palettes.map((palette) => card(palette, 'light')).join('\n')}
 ${palettes.map((palette) => card(palette, 'dark')).join('\n')}
+</div>
+
+<h2>文字温度（深色档下的正文）</h2>
+<p class="lede">同一套配色的三种文字温度：色温越软，白色越暖、越暗，正文对比度从 11.5 收到 8，但始终不低于 7。</p>
+<div class="temps">
+${tiersGrid()}
 </div>
 </body></html>`
 

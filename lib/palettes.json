@@ -1,6 +1,36 @@
 {
   "generated": "tools/build.mjs",
   "tokenCount": 146,
+  "textProfiles": [
+    {
+      "id": "standard",
+      "label": {
+        "zh": "标准",
+        "en": "Standard"
+      },
+      "ceiling": 11.5,
+      "warmth": 0.55
+    },
+    {
+      "id": "soft",
+      "label": {
+        "zh": "柔和",
+        "en": "Soft"
+      },
+      "ceiling": 9.6,
+      "warmth": 1
+    },
+    {
+      "id": "softer",
+      "label": {
+        "zh": "更柔和",
+        "en": "Softer"
+      },
+      "ceiling": 8,
+      "warmth": 1.35
+    }
+  ],
+  "defaultTextProfile": "soft",
   "palettes": [
     {
       "id": "paper",
@@ -598,6 +628,218 @@
           "dark": "#8FC4E0"
         }
       },
+      "text": {
+        "standard": {
+          "--dsw-alias-label-primary": {
+            "light": "#2E2A22",
+            "dark": "#ddd4c1"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#5e5a50",
+            "dark": "#bab3a2"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#423524",
+            "dark": "#d0c2a5"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4A4535",
+            "dark": "#c1b9a3"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#6E6857",
+            "dark": "#948c77"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#7e7868",
+            "dark": "#867f6b"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#868176",
+            "dark": "#8e897b"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4A4535",
+            "dark": "#c1b9a3"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#565248",
+            "dark": "#ada696"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4A4535",
+            "dark": "#c1b9a3"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#7d7869",
+            "dark": "#928c7b"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#d8d4d0"
+          },
+          "--dsw-alias-link": {
+            "light": "#7A4F1F",
+            "dark": "#d3b171"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fcf8f3",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fbf7f3",
+            "dark": "#fbf7f3"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#f7efde",
+            "dark": "#211F19"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fbf7f3",
+            "dark": "#fbf7f3"
+          }
+        },
+        "soft": {
+          "--dsw-alias-label-primary": {
+            "light": "#2E2A22",
+            "dark": "#c7bdab"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#5e5a50",
+            "dark": "#b8af9f"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#423524",
+            "dark": "#bbad94"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4A4535",
+            "dark": "#b1a994"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#6E6857",
+            "dark": "#98907a"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#7e7868",
+            "dark": "#8a826f"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#868176",
+            "dark": "#8d8779"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4A4535",
+            "dark": "#b1a994"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#565248",
+            "dark": "#9d9686"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4A4535",
+            "dark": "#b1a994"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#7d7869",
+            "dark": "#928b7b"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#c7c2ba"
+          },
+          "--dsw-alias-link": {
+            "light": "#7A4F1F",
+            "dark": "#bc9e66"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fcf6ed",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fcf5ed",
+            "dark": "#fcf5ed"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#f8eedb",
+            "dark": "#211F19"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fcf5ed",
+            "dark": "#fcf5ed"
+          }
+        },
+        "softer": {
+          "--dsw-alias-label-primary": {
+            "light": "#2E2A22",
+            "dark": "#b8ae9c"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#5e5a50",
+            "dark": "#aea595"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#423524",
+            "dark": "#ac9f89"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4A4535",
+            "dark": "#9f9784"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#6E6857",
+            "dark": "#918974"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#7e7868",
+            "dark": "#88816d"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#868176",
+            "dark": "#827b6e"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4A4535",
+            "dark": "#a69e8a"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#565248",
+            "dark": "#8a8475"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4A4535",
+            "dark": "#a69e8a"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#7d7869",
+            "dark": "#8b8474"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#b6afa6"
+          },
+          "--dsw-alias-link": {
+            "light": "#7A4F1F",
+            "dark": "#ad915e"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fdf4e8",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fcf3e8",
+            "dark": "#fcf3e8"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#f9edd9",
+            "dark": "#211F19"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fcf3e8",
+            "dark": "#fcf3e8"
+          }
+        }
+      },
       "audit": [
         {
           "mode": "light",
@@ -620,6 +862,74 @@
           "accent": 7.0966450458810915,
           "code": 11.776143634819688,
           "shikiMin": 4.151891534045829
+        }
+      ],
+      "textAudit": [
+        {
+          "profile": "standard",
+          "ceiling": 11.5,
+          "light": {
+            "primary": 12.5361242074029,
+            "secondary": 8.402570390513608,
+            "tertiary": 4.875694917229988,
+            "link": 6.215671993959669,
+            "primaryHex": "#2E2A22",
+            "secondaryHex": "#4A4535",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 11.188428784228975,
+            "secondary": 8.422339562037003,
+            "tertiary": 4.924140532030625,
+            "link": 8.078053568536015,
+            "primaryHex": "#ddd4c1",
+            "secondaryHex": "#c1b9a3",
+            "tempered": 14
+          }
+        },
+        {
+          "profile": "soft",
+          "ceiling": 9.6,
+          "light": {
+            "primary": 12.5361242074029,
+            "secondary": 8.402570390513608,
+            "tertiary": 4.875694917229988,
+            "link": 6.215671993959669,
+            "primaryHex": "#2E2A22",
+            "secondaryHex": "#4A4535",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 8.86132276768117,
+            "secondary": 7.038709013843893,
+            "tertiary": 5.181939879151122,
+            "link": 6.449272613037985,
+            "primaryHex": "#c7bdab",
+            "secondaryHex": "#b1a994",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "softer",
+          "ceiling": 8,
+          "light": {
+            "primary": 12.5361242074029,
+            "secondary": 8.402570390513608,
+            "tertiary": 4.875694917229988,
+            "link": 6.215671993959669,
+            "primaryHex": "#2E2A22",
+            "secondaryHex": "#4A4535",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 7.509657506734145,
+            "secondary": 5.675080791207087,
+            "tertiary": 4.733984350962193,
+            "link": 5.482580060141873,
+            "primaryHex": "#b8ae9c",
+            "secondaryHex": "#9f9784",
+            "tempered": 15
+          }
         }
       ]
     },
@@ -1219,6 +1529,218 @@
           "dark": "#8FC4E0"
         }
       },
+      "text": {
+        "standard": {
+          "--dsw-alias-label-primary": {
+            "light": "#1F2E20",
+            "dark": "#cdd7c8"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#495b4a",
+            "dark": "#a8b5a6"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#223a27",
+            "dark": "#b2c8b3"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#3A4A3C",
+            "dark": "#adbfaa"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#54665A",
+            "dark": "#83967e"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#627668",
+            "dark": "#778971"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#6b806d",
+            "dark": "#828f82"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#3A4A3C",
+            "dark": "#adbfaa"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#425343",
+            "dark": "#9ca99b"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#3A4A3C",
+            "dark": "#adbfaa"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#667968",
+            "dark": "#809280"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#d6d6d3"
+          },
+          "--dsw-alias-link": {
+            "light": "#20553A",
+            "dark": "#8bc19f"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fbf9f6",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#faf8f6",
+            "dark": "#faf8f6"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#d1e8cf",
+            "dark": "#16231A"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#faf8f6",
+            "dark": "#faf8f6"
+          }
+        },
+        "soft": {
+          "--dsw-alias-label-primary": {
+            "light": "#1F2E20",
+            "dark": "#c0c8b8"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#495b4a",
+            "dark": "#acb7a7"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#223a27",
+            "dark": "#a6b9a5"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#3A4A3C",
+            "dark": "#9dae99"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#54665A",
+            "dark": "#82937c"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#627668",
+            "dark": "#768670"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#6b806d",
+            "dark": "#818d7f"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#3A4A3C",
+            "dark": "#a4b49f"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#425343",
+            "dark": "#8c978a"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#3A4A3C",
+            "dark": "#a4b49f"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#667968",
+            "dark": "#7e907d"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#c4c4be"
+          },
+          "--dsw-alias-link": {
+            "light": "#20553A",
+            "dark": "#81b394"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fcf8f2",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fbf7f2",
+            "dark": "#fbf7f2"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#d5e8cf",
+            "dark": "#16231A"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fbf7f2",
+            "dark": "#fbf7f2"
+          }
+        },
+        "softer": {
+          "--dsw-alias-label-primary": {
+            "light": "#1F2E20",
+            "dark": "#b1b8a9"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#495b4a",
+            "dark": "#9ca597"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#223a27",
+            "dark": "#9aaa97"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#3A4A3C",
+            "dark": "#93a18e"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#54665A",
+            "dark": "#809078"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#627668",
+            "dark": "#788771"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#6b806d",
+            "dark": "#748174"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#3A4A3C",
+            "dark": "#93a18e"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#425343",
+            "dark": "#818b7e"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#3A4A3C",
+            "dark": "#93a18e"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#667968",
+            "dark": "#7c8d7b"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#b2b2ab"
+          },
+          "--dsw-alias-link": {
+            "light": "#20553A",
+            "dark": "#719f82"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fcf7ef",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fbf6ef",
+            "dark": "#fbf6ef"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#d8e8cf",
+            "dark": "#16231A"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fbf6ef",
+            "dark": "#fbf6ef"
+          }
+        }
+      },
       "audit": [
         {
           "mode": "light",
@@ -1241,6 +1763,74 @@
           "accent": 6.910567807069194,
           "code": 11.436278747196903,
           "shikiMin": 4.120584548421344
+        }
+      ],
+      "textAudit": [
+        {
+          "profile": "standard",
+          "ceiling": 11.5,
+          "light": {
+            "primary": 10.89253777201921,
+            "secondary": 7.197079487236723,
+            "tertiary": 4.6745754235902925,
+            "link": 6.610939156328717,
+            "primaryHex": "#1F2E20",
+            "secondaryHex": "#3A4A3C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 10.973747891326584,
+            "secondary": 8.383169337738906,
+            "tertiary": 5.140875613639183,
+            "link": 7.930878062027777,
+            "primaryHex": "#cdd7c8",
+            "secondaryHex": "#adbfaa",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "soft",
+          "ceiling": 9.6,
+          "light": {
+            "primary": 10.89253777201921,
+            "secondary": 7.197079487236723,
+            "tertiary": 4.6745754235902925,
+            "link": 6.610939156328717,
+            "primaryHex": "#1F2E20",
+            "secondaryHex": "#3A4A3C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 9.457678204799581,
+            "secondary": 6.939444348486587,
+            "tertiary": 4.974005811940401,
+            "link": 6.831697805694764,
+            "primaryHex": "#c0c8b8",
+            "secondaryHex": "#9dae99",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "softer",
+          "ceiling": 8,
+          "light": {
+            "primary": 10.89253777201921,
+            "secondary": 7.197079487236723,
+            "tertiary": 4.6745754235902925,
+            "link": 6.610939156328717,
+            "primaryHex": "#1F2E20",
+            "secondaryHex": "#3A4A3C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 7.986803676264937,
+            "secondary": 5.99417870795485,
+            "tertiary": 4.791489650335058,
+            "link": 5.416086575047304,
+            "primaryHex": "#b1b8a9",
+            "secondaryHex": "#93a18e",
+            "tempered": 15
+          }
         }
       ]
     },
@@ -1840,6 +2430,218 @@
           "dark": "#8FC4E0"
         }
       },
+      "text": {
+        "standard": {
+          "--dsw-alias-label-primary": {
+            "light": "#2A2E2A",
+            "dark": "#d0d5d7"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#595c57",
+            "dark": "#a5a9ad"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#2c3a3c",
+            "dark": "#b7c4cb"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4C524C",
+            "dark": "#a6adb1"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#666D67",
+            "dark": "#7e878b"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#767c76",
+            "dark": "#717a7e"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#7f827d",
+            "dark": "#818589"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4C524C",
+            "dark": "#a6adb1"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#515450",
+            "dark": "#a0a5a8"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4C524C",
+            "dark": "#a6adb1"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#7c817b",
+            "dark": "#7c8286"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#cdcdcd"
+          },
+          "--dsw-alias-link": {
+            "light": "#2A5A6D",
+            "dark": "#90bacb"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fbfaf8",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#faf9f8",
+            "dark": "#faf9f8"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#edede6",
+            "dark": "#1A1D20"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#faf9f8",
+            "dark": "#faf9f8"
+          }
+        },
+        "soft": {
+          "--dsw-alias-label-primary": {
+            "light": "#2A2E2A",
+            "dark": "#babec0"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#595c57",
+            "dark": "#a6aaad"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#2c3a3c",
+            "dark": "#aab6bb"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4C524C",
+            "dark": "#a1a8ab"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#666D67",
+            "dark": "#7f888b"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#767c76",
+            "dark": "#737b7e"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#7f827d",
+            "dark": "#828689"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4C524C",
+            "dark": "#a1a8ab"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#515450",
+            "dark": "#8e9396"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4C524C",
+            "dark": "#a1a8ab"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#7c817b",
+            "dark": "#7e8386"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#bbbbba"
+          },
+          "--dsw-alias-link": {
+            "light": "#2A5A6D",
+            "dark": "#80a6b5"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fbfaf6",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#faf9f6",
+            "dark": "#faf9f6"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#eeede5",
+            "dark": "#1A1D20"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#faf9f6",
+            "dark": "#faf9f6"
+          }
+        },
+        "softer": {
+          "--dsw-alias-label-primary": {
+            "light": "#2A2E2A",
+            "dark": "#acafb0"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#595c57",
+            "dark": "#9b9fa1"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#2c3a3c",
+            "dark": "#97a1a5"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4C524C",
+            "dark": "#919799"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#666D67",
+            "dark": "#80898c"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#767c76",
+            "dark": "#737c7f"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#7f827d",
+            "dark": "#76797c"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4C524C",
+            "dark": "#979d9f"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#515450",
+            "dark": "#838789"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4C524C",
+            "dark": "#979d9f"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#7c817b",
+            "dark": "#7f8487"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#b3b2b1"
+          },
+          "--dsw-alias-link": {
+            "light": "#2A5A6D",
+            "dark": "#7698a6"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fbf9f5",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fbf8f5",
+            "dark": "#fbf8f5"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#eeede4",
+            "dark": "#1A1D20"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fbf8f5",
+            "dark": "#fbf8f5"
+          }
+        }
+      },
       "audit": [
         {
           "mode": "light",
@@ -1862,6 +2664,74 @@
           "accent": 7.1821539116189,
           "code": 11.17244855646048,
           "shikiMin": 3.822483545899538
+        }
+      ],
+      "textAudit": [
+        {
+          "profile": "standard",
+          "ceiling": 11.5,
+          "light": {
+            "primary": 11.712347341024534,
+            "secondary": 6.810625414149457,
+            "tertiary": 4.516957838576692,
+            "link": 6.411151802018614,
+            "primaryHex": "#2A2E2A",
+            "secondaryHex": "#4C524C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 11.431398609023264,
+            "secondary": 7.443372260577798,
+            "tertiary": 4.615407224045168,
+            "link": 8.118964164742996,
+            "primaryHex": "#d0d5d7",
+            "secondaryHex": "#a6adb1",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "soft",
+          "ceiling": 9.6,
+          "light": {
+            "primary": 11.712347341024534,
+            "secondary": 6.810625414149457,
+            "tertiary": 4.516957838576692,
+            "link": 6.411151802018614,
+            "primaryHex": "#2A2E2A",
+            "secondaryHex": "#4C524C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 9.040007211900111,
+            "secondary": 7.016802778299351,
+            "tertiary": 4.6729278672674495,
+            "link": 6.480775236217622,
+            "primaryHex": "#babec0",
+            "secondaryHex": "#a1a8ab",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "softer",
+          "ceiling": 8,
+          "light": {
+            "primary": 11.712347341024534,
+            "secondary": 6.810625414149457,
+            "tertiary": 4.516957838576692,
+            "link": 6.411151802018614,
+            "primaryHex": "#2A2E2A",
+            "secondaryHex": "#4C524C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 7.668556467293356,
+            "secondary": 5.715783278329197,
+            "tertiary": 4.735730219369774,
+            "link": 5.491415591044451,
+            "primaryHex": "#acafb0",
+            "secondaryHex": "#919799",
+            "tempered": 15
+          }
         }
       ]
     },
@@ -2461,6 +3331,218 @@
           "dark": "#8FC4E0"
         }
       },
+      "text": {
+        "standard": {
+          "--dsw-alias-label-primary": {
+            "light": "#26262A",
+            "dark": "#c9c9cc"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#565658",
+            "dark": "#a4a5a7"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#2e2f38",
+            "dark": "#bdbec9"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#47474C",
+            "dark": "#a9a9ae"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#6A6A70",
+            "dark": "#7f7f84"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#7a7a7f",
+            "dark": "#76767b"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#7e7e7f",
+            "dark": "#808084"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#47474C",
+            "dark": "#a9a9ae"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#4e4e51",
+            "dark": "#9f9fa2"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#47474C",
+            "dark": "#a9a9ae"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#79797c",
+            "dark": "#7d7e83"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#cccdcc"
+          },
+          "--dsw-alias-link": {
+            "light": "#3D4060",
+            "dark": "#a9aed0"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fbfbf9",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fafaf9",
+            "dark": "#fafaf9"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#ededea",
+            "dark": "#16171A"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fafaf9",
+            "dark": "#fafaf9"
+          }
+        },
+        "soft": {
+          "--dsw-alias-label-primary": {
+            "light": "#26262A",
+            "dark": "#bbbabc"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#565658",
+            "dark": "#a5a5a8"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#2e2f38",
+            "dark": "#a8a9b2"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#47474C",
+            "dark": "#a4a3a9"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#6A6A70",
+            "dark": "#807f85"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#7a7a7f",
+            "dark": "#76767c"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#7e7e7f",
+            "dark": "#818084"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#47474C",
+            "dark": "#a4a3a9"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#4e4e51",
+            "dark": "#8d8d91"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#47474C",
+            "dark": "#a4a3a9"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#79797c",
+            "dark": "#7e7e83"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#bababa"
+          },
+          "--dsw-alias-link": {
+            "light": "#3D4060",
+            "dark": "#979bba"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fbfaf8",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#faf9f8",
+            "dark": "#faf9f8"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#eeedea",
+            "dark": "#16171A"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#faf9f8",
+            "dark": "#faf9f8"
+          }
+        },
+        "softer": {
+          "--dsw-alias-label-primary": {
+            "light": "#26262A",
+            "dark": "#acaaad"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#565658",
+            "dark": "#9a9a9c"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#2e2f38",
+            "dark": "#999aa3"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#47474C",
+            "dark": "#929196"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#6A6A70",
+            "dark": "#808085"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#7a7a7f",
+            "dark": "#737378"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#7e7e7f",
+            "dark": "#737376"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#47474C",
+            "dark": "#98989c"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#4e4e51",
+            "dark": "#818184"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#47474C",
+            "dark": "#98989c"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#79797c",
+            "dark": "#7e7f83"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#a8a8a7"
+          },
+          "--dsw-alias-link": {
+            "light": "#3D4060",
+            "dark": "#8a8eaa"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fbfaf7",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#faf9f7",
+            "dark": "#faf9f7"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#eeede9",
+            "dark": "#16171A"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#faf9f7",
+            "dark": "#faf9f7"
+          }
+        }
+      },
       "audit": [
         {
           "mode": "light",
@@ -2483,6 +3565,74 @@
           "accent": 7.030068500793711,
           "code": 11.848130778075094,
           "shikiMin": 3.838137969448347
+        }
+      ],
+      "textAudit": [
+        {
+          "profile": "standard",
+          "ceiling": 11.5,
+          "light": {
+            "primary": 12.859311735777888,
+            "secondary": 7.879315966577643,
+            "tertiary": 4.583493859265566,
+            "link": 8.527799533232548,
+            "primaryHex": "#26262A",
+            "secondaryHex": "#47474C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 10.848584276659112,
+            "secondary": 7.659158542030214,
+            "tertiary": 4.499309049908588,
+            "link": 8.23858402134254,
+            "primaryHex": "#c9c9cc",
+            "secondaryHex": "#a9a9ae",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "soft",
+          "ceiling": 9.6,
+          "light": {
+            "primary": 12.859311735777888,
+            "secondary": 7.879315966577643,
+            "tertiary": 4.583493859265566,
+            "link": 8.527799533232548,
+            "primaryHex": "#26262A",
+            "secondaryHex": "#47474C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 9.271754969291278,
+            "secondary": 7.161463441882812,
+            "tertiary": 4.517178857732806,
+            "link": 6.5837350625116775,
+            "primaryHex": "#bbbabc",
+            "secondaryHex": "#a4a3a9",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "softer",
+          "ceiling": 8,
+          "light": {
+            "primary": 12.859311735777888,
+            "secondary": 7.879315966577643,
+            "tertiary": 4.583493859265566,
+            "link": 8.527799533232548,
+            "primaryHex": "#26262A",
+            "secondaryHex": "#47474C",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 7.7735832939864435,
+            "secondary": 5.729618238156638,
+            "tertiary": 4.561494589677921,
+            "link": 5.573890734454562,
+            "primaryHex": "#acaaad",
+            "secondaryHex": "#929196",
+            "tempered": 15
+          }
         }
       ]
     },
@@ -3082,6 +4232,218 @@
           "dark": "#8FC4E0"
         }
       },
+      "text": {
+        "standard": {
+          "--dsw-alias-label-primary": {
+            "light": "#33281F",
+            "dark": "#d7c7b5"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#62574d",
+            "dark": "#b3a596"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#4a3123",
+            "dark": "#d2baa2"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4F4235",
+            "dark": "#c1af9a"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#736356",
+            "dark": "#958271"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#837467",
+            "dark": "#867565"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#897f74",
+            "dark": "#877b70"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4F4235",
+            "dark": "#c1af9a"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#5a4f46",
+            "dark": "#a7998b"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4F4235",
+            "dark": "#c1af9a"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#817568",
+            "dark": "#8c7d6f"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#cfcac5"
+          },
+          "--dsw-alias-link": {
+            "light": "#8A4526",
+            "dark": "#dca379"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fcf8f2",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fbf7f2",
+            "dark": "#fbf7f2"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#f8ecdd",
+            "dark": "#1D1512"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fbf7f2",
+            "dark": "#fbf7f2"
+          }
+        },
+        "soft": {
+          "--dsw-alias-label-primary": {
+            "light": "#33281F",
+            "dark": "#cbbaa8"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#62574d",
+            "dark": "#b2a394"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#4a3123",
+            "dark": "#bda793"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4F4235",
+            "dark": "#b19f8d"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#736356",
+            "dark": "#988674"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#837467",
+            "dark": "#8a7868"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#897f74",
+            "dark": "#8b7f74"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4F4235",
+            "dark": "#b19f8d"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#5a4f46",
+            "dark": "#9d8f82"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4F4235",
+            "dark": "#b19f8d"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#817568",
+            "dark": "#918172"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#beb6ae"
+          },
+          "--dsw-alias-link": {
+            "light": "#8A4526",
+            "dark": "#c4916c"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fcf5eb",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fcf4eb",
+            "dark": "#fcf4eb"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#f9ecda",
+            "dark": "#1D1512"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fcf4eb",
+            "dark": "#fcf4eb"
+          }
+        },
+        "softer": {
+          "--dsw-alias-label-primary": {
+            "light": "#33281F",
+            "dark": "#b4a594"
+          },
+          "--dsw-alias-label-primary-dimmed": {
+            "light": "#62574d",
+            "dark": "#a89a8b"
+          },
+          "--dsw-alias-label-primary-bluish": {
+            "light": "#4a3123",
+            "dark": "#af9b88"
+          },
+          "--dsw-alias-label-secondary": {
+            "light": "#4F4235",
+            "dark": "#9e8e7d"
+          },
+          "--dsw-alias-label-tertiary": {
+            "light": "#736356",
+            "dark": "#917f6e"
+          },
+          "--dsw-alias-label-caption": {
+            "light": "#837467",
+            "dark": "#877767"
+          },
+          "--dsw-alias-label-dimmed": {
+            "light": "#897f74",
+            "dark": "#7f7368"
+          },
+          "--dsw-alias-label-document-preview": {
+            "light": "#4F4235",
+            "dark": "#a59583"
+          },
+          "--dsw-alias-label-shimmer": {
+            "light": "#5a4f46",
+            "dark": "#8c7f73"
+          },
+          "--dsw-alias-label-deep-diving": {
+            "light": "#4F4235",
+            "dark": "#a59583"
+          },
+          "--dsw-alias-label-deep-diving-shimmer": {
+            "light": "#817568",
+            "dark": "#897b6c"
+          },
+          "--dsw-alias-label-primary-foreground": {
+            "light": "#1a1a1a",
+            "dark": "#b5aba2"
+          },
+          "--dsw-alias-link": {
+            "light": "#8A4526",
+            "dark": "#b48563"
+          },
+          "--dsw-alias-brand-text": {
+            "light": "#fdf3e6",
+            "dark": "#171717"
+          },
+          "--dsw-alias-toast-label": {
+            "light": "#fcf2e6",
+            "dark": "#fcf2e6"
+          },
+          "--dsw-alias-label-primary-inverted": {
+            "light": "#faebd8",
+            "dark": "#1D1512"
+          },
+          "--dsw-alias-switch-thumb": {
+            "light": "#fcf2e6",
+            "dark": "#fcf2e6"
+          }
+        }
+      },
       "audit": [
         {
           "mode": "light",
@@ -3104,6 +4466,74 @@
           "accent": 6.60515460409859,
           "code": 11.438600556808087,
           "shikiMin": 4.164508967872906
+        }
+      ],
+      "textAudit": [
+        {
+          "profile": "standard",
+          "ceiling": 11.5,
+          "light": {
+            "primary": 12.368724616876255,
+            "secondary": 8.371416125660899,
+            "tertiary": 4.963871559261513,
+            "link": 6.117995850508751,
+            "primaryHex": "#33281F",
+            "secondaryHex": "#4F4235",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 10.893303289319226,
+            "secondary": 8.445246808014371,
+            "tertiary": 4.887182456892527,
+            "link": 8.181604865408778,
+            "primaryHex": "#d7c7b5",
+            "secondaryHex": "#c1af9a",
+            "tempered": 15
+          }
+        },
+        {
+          "profile": "soft",
+          "ceiling": 9.6,
+          "light": {
+            "primary": 12.368724616876255,
+            "secondary": 8.371416125660899,
+            "tertiary": 4.963871559261513,
+            "link": 6.117995850508751,
+            "primaryHex": "#33281F",
+            "secondaryHex": "#4F4235",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 9.525669432223372,
+            "secondary": 7.030468746732077,
+            "tertiary": 5.1336157731680565,
+            "link": 6.517355710051495,
+            "primaryHex": "#cbbaa8",
+            "secondaryHex": "#b19f8d",
+            "tempered": 12
+          }
+        },
+        {
+          "profile": "softer",
+          "ceiling": 8,
+          "light": {
+            "primary": 12.368724616876255,
+            "secondary": 8.371416125660899,
+            "tertiary": 4.963871559261513,
+            "link": 6.117995850508751,
+            "primaryHex": "#33281F",
+            "secondaryHex": "#4F4235",
+            "tempered": 4
+          },
+          "dark": {
+            "primary": 7.4901695162128386,
+            "secondary": 5.665906207410315,
+            "tertiary": 4.67784173721311,
+            "link": 5.543232626042087,
+            "primaryHex": "#b4a594",
+            "secondaryHex": "#9e8e7d",
+            "tempered": 15
+          }
         }
       ]
     }

@@ -82,6 +82,7 @@ export const PALETTES = [
     id: 'paper',
     name: { zh: '宣纸', en: 'Paper' },
     tagline: { zh: '暖米黄 · 久读不涩', en: 'Warm cream — easy on long reads' },
+    textWarmth: 0.3,
     light: {
       base: '#F5F0E1', raised: '#FAF6EA', panel: '#EFE9D6',
       ink: '#2E2A22', ink2: '#4A4535', ink3: '#6E6857',
@@ -97,6 +98,7 @@ export const PALETTES = [
     id: 'sage',
     name: { zh: '豆沙绿', en: 'Sage' },
     tagline: { zh: '经典护眼绿 · 缓解屏幕刺目', en: 'The classic eye-care green' },
+    textWarmth: 0.18,
     light: {
       base: '#CCE8CF', raised: '#D7EDDA', panel: '#C1E0C6',
       ink: '#1F2E20', ink2: '#3A4A3C', ink3: '#54665A',
@@ -112,6 +114,7 @@ export const PALETTES = [
     id: 'mist',
     name: { zh: '月白', en: 'Mist' },
     tagline: { zh: '冷灰白 · 明亮环境首选', en: 'Cool neutral — for bright rooms' },
+    textWarmth: 0.08,
     light: {
       base: '#ECEDE7', raised: '#F3F4EF', panel: '#E2E4DD',
       ink: '#2A2E2A', ink2: '#4C524C', ink3: '#666D67',
@@ -127,6 +130,7 @@ export const PALETTES = [
     id: 'ink',
     name: { zh: '墨夜', en: 'Ink Night' },
     tagline: { zh: '无彩中性 · 夜间不偏色', en: 'Neutral greys — no colour cast' },
+    textWarmth: 0.05,
     light: {
       base: '#EDEDEB', raised: '#F4F4F2', panel: '#E3E3E0',
       ink: '#26262A', ink2: '#47474C', ink3: '#6A6A70',
@@ -142,6 +146,7 @@ export const PALETTES = [
     id: 'amber',
     name: { zh: '霞光', en: 'Amber' },
     tagline: { zh: '暖杏暮色 · 蓝光最少', en: 'Warm dusk — least blue light' },
+    textWarmth: 0.34,
     light: {
       base: '#F6EDE0', raised: '#FBF4EA', panel: '#F0E4D2',
       ink: '#33281F', ink2: '#4F4235', ink3: '#736356',
@@ -423,4 +428,240 @@ export function audit(palette) {
     })
   }
   return rows
+}
+
+// ---------------------------------------------------------------- text temperature
+/**
+ * The label ramp — copy that renders on a surface and is therefore what glares
+ * in a dark theme. It is tempered as one ramp, not token by token, so the
+ * hierarchy (primary > secondary > tertiary) survives warming and dimming.
+ */
+export const LABEL_RAMP_TOKENS = [
+  '--dsw-alias-label-primary',
+  '--dsw-alias-label-primary-dimmed',
+  '--dsw-alias-label-primary-bluish',
+  '--dsw-alias-label-secondary',
+  '--dsw-alias-label-tertiary',
+  '--dsw-alias-label-caption',
+  '--dsw-alias-label-dimmed',
+  '--dsw-alias-label-document-preview',
+  '--dsw-alias-label-shimmer',
+  '--dsw-alias-label-deep-diving',
+  '--dsw-alias-label-deep-diving-shimmer',
+  '--dsw-alias-label-primary-foreground',
+]
+
+/** Accent copy: dimmed with the ramp so it fits, but never re-hued — a link must read as a link. */
+export const ACCENT_TEXT_TOKENS = ['--dsw-alias-link']
+
+/**
+ * Copy that renders on a filled accent (primary buttons, toasts, inverted chips).
+ * Its contrast is set by the fill, so it is warmed toward an off-white and never
+ * dimmed below the readability floor.
+ */
+export const ON_FILL_TEXT_TOKENS = [
+  '--dsw-alias-brand-text',
+  '--dsw-alias-toast-label',
+  '--dsw-alias-label-primary-inverted',
+  '--dsw-alias-switch-thumb',
+]
+
+/** Off-white the copy leans toward; ~3800K reads warm without turning sepia. */
+const WARM_WHITE = '#FFE9CE'
+/** Readability floor kept by every profile, even the dimmest. */
+const READABILITY_FLOOR = 4.5
+
+/**
+ * The three text temperatures offered in Settings. `ceiling` is the maximum
+ * contrast the brightest copy may reach against its surface (a 13:1 near-white
+ * body text is legible but tiring); `warmth` scales the palette's `textWarmth`.
+ */
+export const TEXT_PROFILES = [
+  { id: 'standard', label: { zh: '标准', en: 'Standard' }, ceiling: 11.5, warmth: 0.55 },
+  { id: 'soft', label: { zh: '柔和', en: 'Soft' }, ceiling: 9.6, warmth: 1 },
+  { id: 'softer', label: { zh: '更柔和', en: 'Softer' }, ceiling: 8, warmth: 1.35 },
+]
+
+/** Profile applied when the user has not chosen one. */
+export const DEFAULT_TEXT_PROFILE = 'soft'
+
+/** Blend toward `toward` until the measured luminance is at or below `target`. */
+function dimTo(color, toward, target) {
+  if (luminance(color) <= target) return color
+  let candidate = color
+  for (let step = 1; step <= 24; step += 1) {
+    candidate = mix(color, toward, step * 0.04)
+    if (luminance(candidate) <= target) return candidate
+  }
+  return candidate
+}
+
+/** Contrast tier per label token, as a fraction of the profile's primary target. */
+const TIER = {
+  '--dsw-alias-label-primary': 1,
+  '--dsw-alias-label-primary-dimmed': 0.85,
+  '--dsw-alias-label-primary-bluish': 0.85,
+  '--dsw-alias-label-primary-foreground': 1,
+  '--dsw-alias-label-document-preview': 0.78,
+  '--dsw-alias-label-deep-diving': 0.78,
+  '--dsw-alias-label-secondary': 0.76,
+  '--dsw-alias-label-tertiary': 0.60,
+  '--dsw-alias-label-caption': 0.56,
+  '--dsw-alias-label-shimmer': 0.60,
+  '--dsw-alias-label-deep-diving-shimmer': 0.58,
+  '--dsw-alias-label-dimmed': 0.50,
+  '--dsw-alias-link': 0.72,
+}
+
+/** Lowest contrast a tier may keep, even in the dimmest profile. */
+const TIER_FLOOR = 4
+
+/**
+ * Bring the palette's body copy into the requested temperature.
+ *
+ * Light copy is warmed by the palette's own `textWarmth` (a warm palette goes
+ * creamier, a cool one only loses its blue bite), then every label tier is
+ * pulled onto a target contrast derived from the profile: primary sits on the
+ * ceiling, each lower tier keeps its fraction of it. Working in contrast rather
+ * than colour keeps the ramp monotonic — secondary can never out-glow primary —
+ * and keeps the AA floor. A light theme's dark copy is never touched: it does not
+ * glare.
+ *
+ * @param palette - palette record from {@link PALETTES}.
+ * @param mode - `light` or `dark`.
+ * @param profile - one entry of {@link TEXT_PROFILES}.
+ * @returns token name -> tempered CSS value, for the tokens this mode defines.
+ */
+export function temperText(palette, mode, profile) {
+  const seed = palette[mode]
+  const raw = derive(seed, mode)
+  const surface = seed.base
+  const out = {}
+
+  const primaryRaw = raw['--dsw-alias-label-primary']
+  const isLightCopy = luminance(primaryRaw) > luminance(surface)
+  const skew = Math.min(1, (palette.textWarmth ?? 0.15) * profile.warmth)
+
+  if (!isLightCopy) {
+    // Dark copy on a light surface: keep the designed colours, only soften whites
+    // that land on filled accents.
+    for (const name of LABEL_RAMP_TOKENS.concat(ACCENT_TEXT_TOKENS)) {
+      if (raw[name] !== undefined) out[name] = raw[name]
+    }
+    for (const name of ON_FILL_TEXT_TOKENS) {
+      if (raw[name] === undefined) continue
+      const value = raw[name]
+      const onFillSkew = Math.min(0.5, skew)
+      out[name] = onFillSkew > 0 && luminance(value) >= 0.6 ? mix(value, WARM_WHITE, onFillSkew) : value
+    }
+    return out
+  }
+
+  // Primary: the brightest copy in the theme — warm it, then land it on the ceiling
+  // (or leave it alone when it is already dimmer than the ceiling).
+  const primaryTarget = Math.min(contrast(primaryRaw, surface), profile.ceiling)
+  const primaryWarmed = skew > 0 ? mix(primaryRaw, WARM_WHITE, skew) : primaryRaw
+  out['--dsw-alias-label-primary'] = colorAtContrast(primaryWarmed, surface, primaryTarget)
+
+  for (const name of LABEL_RAMP_TOKENS.concat(ACCENT_TEXT_TOKENS)) {
+    if (name === '--dsw-alias-label-primary' || raw[name] === undefined) continue
+    const value = raw[name]
+    const tier = TIER[name] ?? 1
+    const warmed = (ACCENT_TEXT_TOKENS.includes(name) ? value : mix(value, WARM_WHITE, skew * Math.min(1, luminance(value) * 1.15)))
+    const target = Math.max(TIER_FLOOR, Math.min(contrast(value, surface), primaryTarget * tier))
+    out[name] = colorAtContrast(warmed, surface, target)
+  }
+
+  for (const name of ON_FILL_TEXT_TOKENS) {
+    if (raw[name] === undefined) continue
+    const value = raw[name]
+    const onFillSkew = Math.min(0.5, skew)
+    out[name] = onFillSkew > 0 && luminance(value) >= 0.6 ? mix(value, WARM_WHITE, onFillSkew) : value
+  }
+
+  return out
+}
+
+/**
+ * Keep a copy colour's hue but land it on a contrast target against its surface.
+ * Copy dimmer than the target is left as designed (the palette already chose it).
+ * @param color - the (already warmed) copy colour.
+ * @param surface - the background it sits on.
+ * @param target - desired contrast ratio.
+ * @returns the adjusted colour.
+ */
+function colorAtContrast(color, surface, target) {
+  const desired = luminanceForContrast(target, surface)
+  if (luminance(color) <= desired) return color
+  return dimTo(color, surface, desired)
+}
+
+/**
+ * Background luminance that produces exactly `target` contrast against `surface`
+ * when the copy is the lighter of the two.
+ * @param target - desired contrast ratio.
+ * @param surface - the background in question.
+ * @returns the copy luminance that meets it.
+ */
+function luminanceForContrast(target, surface) {
+  const surfaceLuminance = luminance(surface)
+  return Math.min(0.98, Math.max(surfaceLuminance, target * (surfaceLuminance + 0.05) - 0.05))
+}
+
+/**
+ * Expand one palette into its per-profile text maps.
+ * @param palette - palette record from {@link PALETTES}.
+ * @returns `{ [profileId]: { light: {token: value}, dark: {token: value} } }`.
+ */
+export function buildTextProfiles(palette) {
+  const profiles = {}
+  for (const profile of TEXT_PROFILES) {
+    profiles[profile.id] = {}
+    for (const mode of ['light', 'dark']) profiles[profile.id][mode] = temperText(palette, mode, profile)
+  }
+  return profiles
+}
+
+/** `{ profileId: { token: { light, dark } } }` — the shape the client merges over the palette layer. */
+export function toTextOverrideMaps(palette) {
+  const profiles = buildTextProfiles(palette)
+  const maps = {}
+  for (const profile of TEXT_PROFILES) {
+    const map = {}
+    for (const [name, value] of Object.entries(profiles[profile.id].light)) {
+      map[name] = { light: value, dark: profiles[profile.id].dark[name] }
+    }
+    maps[profile.id] = map
+  }
+  return maps
+}
+
+/**
+ * Text audit for the build gate and the README tables.
+ * @param palette - palette record.
+ * @returns one row per profile: the contrast each label tier lands on, and the
+ *          tempered primary colour, per mode.
+ */
+export function textAudit(palette) {
+  const profiles = buildTextProfiles(palette)
+  return TEXT_PROFILES.map((profile) => {
+    const row = { profile: profile.id, ceiling: profile.ceiling }
+    for (const mode of ['light', 'dark']) {
+      const seed = palette[mode]
+      const raw = derive(seed, mode)
+      const text = profiles[profile.id][mode]
+      const changed = LABEL_RAMP_TOKENS.concat(ACCENT_TEXT_TOKENS, ON_FILL_TEXT_TOKENS)
+        .filter((name) => typeof text[name] === 'string' && text[name] !== raw[name])
+      row[mode] = {
+        primary: contrast(text['--dsw-alias-label-primary'], seed.base),
+        secondary: contrast(text['--dsw-alias-label-secondary'], seed.base),
+        tertiary: contrast(text['--dsw-alias-label-tertiary'], seed.base),
+        link: contrast(text['--dsw-alias-link'], seed.base),
+        primaryHex: text['--dsw-alias-label-primary'],
+        secondaryHex: text['--dsw-alias-label-secondary'],
+        tempered: changed.length,
+      }
+    }
+    return row
+  })
 }

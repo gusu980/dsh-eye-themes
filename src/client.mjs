@@ -11,13 +11,19 @@
 const React = require('react')
 
 const SOURCE = 'dsh-eye-themes'
-/** Palette ids and their full token maps, generated from src/palettes.mjs. */
+/** Palette ids, their token maps and their per-temperature text maps, from src/palettes.mjs. */
 const PAYLOAD = __PAYLOAD__
+/** The three text temperatures (standard / soft / softer) offered under the swatches. */
+const TEXT_PROFILES = __TEXT_PROFILES__
+/** Profile used until the user picks one. */
+const DEFAULT_TEXT_PROFILE = __DEFAULT_TEXT_PROFILE__
 /** Owner stylesheet for the settings row (tagged so the module system reclaims it). */
 const ROW_CSS = __ROW_CSS__
 
 /** `localStorage` key holding the chosen palette id (or the off marker). */
 const STORAGE_KEY = 'dsh-eye-themes:palette'
+/** `localStorage` key holding the chosen text temperature. */
+const TEXT_KEY = 'dsh-eye-themes:text'
 /** Selection that removes the layer and hands the app back its built-in palette. */
 const OFF_ID = 'default'
 /** Locale namespace owning this row's copy; the slot descriptor binds it. */
@@ -30,6 +36,8 @@ const MESSAGES = {
     off: '默认',
     offHint: '使用内置配色',
     active: '使用中',
+    textTitle: '文字温度',
+    textHint: '越低越不刺眼，正文对比度不减到看不清',
   },
   en: {
     title: 'Eye-care palettes',
@@ -37,6 +45,8 @@ const MESSAGES = {
     off: 'Default',
     offHint: 'Use the built-in palette',
     active: 'Active',
+    textTitle: 'Text warmth',
+    textHint: 'Softer settings dim the copy without losing legibility',
   },
 }
 
@@ -62,19 +72,48 @@ function installRowCss(ctx) {
 
 // ---------------------------------------------------------------- state
 let selection = OFF_ID
+let textProfile = DEFAULT_TEXT_PROFILE
 let applied = null
+let appliedText = null
 let disposeLayer = null
 let themeService = null
 let localeService = null
 const listeners = new Set()
+const textListeners = new Set()
 
 function subscribe(listener) {
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
 
+function subscribeText(listener) {
+  textListeners.add(listener)
+  return () => textListeners.delete(listener)
+}
+
 function announce() {
   for (const listener of listeners) listener(selection)
+}
+
+function announceText() {
+  for (const listener of textListeners) listener(textProfile)
+}
+
+function readStoredText() {
+  try {
+    const raw = window.localStorage.getItem(TEXT_KEY)
+    return TEXT_PROFILES.some((profile) => profile.id === raw) ? raw : DEFAULT_TEXT_PROFILE
+  } catch {
+    return DEFAULT_TEXT_PROFILE
+  }
+}
+
+function writeStoredText(id) {
+  try {
+    window.localStorage.setItem(TEXT_KEY, id)
+  } catch (error) {
+    console.warn(`${SOURCE}: could not persist the text temperature`, error)
+  }
 }
 
 function readStored() {
@@ -100,6 +139,12 @@ function writeStored(id) {
  * Re-calling `overrideTokens` with the same source atomically replaces the
  * previous layer, so palette -> palette is a single publish.
  */
+/** The palette's tokens with the selected text temperature laid over the copy tokens. */
+function layerTokens(palette) {
+  const text = palette.text?.[textProfile]
+  return text === undefined ? palette.tokens : { ...palette.tokens, ...text }
+}
+
 function push(id) {
   const palette = BY_ID.get(id)
   if (palette === undefined) {
@@ -109,15 +154,17 @@ function push(id) {
       applied = null
       dispose()
     }
+    appliedText = null
     return
   }
-  disposeLayer = themeService.overrideTokens(SOURCE, palette.tokens)
+  disposeLayer = themeService.overrideTokens(SOURCE, layerTokens(palette))
   applied = id
+  appliedText = textProfile
 }
 
 function reconcile() {
   if (themeService === null) return
-  if (selection !== applied) push(selection)
+  if (selection !== applied || textProfile !== appliedText) push(selection)
 }
 
 function choose(id) {
@@ -127,6 +174,14 @@ function choose(id) {
   announce()
 }
 
+/** Switch the text temperature; a palette switch is not implied and the layer is replaced in place. */
+function chooseText(id) {
+  textProfile = id
+  writeStoredText(id)
+  reconcile()
+  announceText()
+}
+
 function select(id) {
   selection = id
   reconcile()
@@ -134,8 +189,15 @@ function select(id) {
 }
 
 const onStorage = (event) => {
-  if (event.key !== null && event.key !== STORAGE_KEY) return
-  select(readStored())
+  if (event.key === null || event.key === TEXT_KEY) {
+    const next = readStoredText()
+    if (next !== textProfile) {
+      textProfile = next
+      reconcile()
+      announceText()
+    }
+  }
+  if (event.key === null || event.key === STORAGE_KEY) select(readStored())
 }
 
 /** Which variant the app is showing right now (drives the swatch preview). */
@@ -185,12 +247,28 @@ function Cube({ id, label, hint, colors, selected, onSelect, activeLabel }) {
  * It owns its selection, so it needs no store seat and no injected action;
  * `t` arrives from the descriptor's `locale`, and a language switch remints it.
  */
+/** One text-temperature pill. */
+function Temperature({ id, label, selected, onSelect }) {
+  return h(
+    'button',
+    {
+      type: 'button',
+      className: `dshEyeThemes_tier${selected ? ' is-selected' : ''}`,
+      'aria-pressed': selected,
+      onClick: onSelect,
+    },
+    label,
+  )
+}
+
 function EyeThemesRow(props) {
   const t = props?.t ?? ((key) => MESSAGES.zh[key] ?? key)
   const [selected, setSelected] = React.useState(readStored)
+  const [temperature, setTemperature] = React.useState(readStoredText)
   const [mode, setMode] = React.useState(currentMode)
 
   React.useEffect(() => subscribe((id) => setSelected(id)), [])
+  React.useEffect(() => subscribeText((id) => setTemperature(id)), [])
   // Repaint the swatches when the underlying light/dark mode flips.
   React.useEffect(() => {
     if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return undefined
@@ -247,6 +325,29 @@ function EyeThemesRow(props) {
         onSelect: () => choose(OFF_ID),
       }),
     ),
+    h(
+      'div',
+      { className: 'dshEyeThemes_temperature' },
+      h(
+        'div',
+        { className: 'dshEyeThemes_tempLabel' },
+        h('span', { className: 'dshEyeThemes_titleMuted' }, t('textTitle')),
+        h('span', { className: 'dshEyeThemes_hint' }, t('textHint')),
+      ),
+      h(
+        'div',
+        { className: 'dshEyeThemes_tiers', role: 'group', 'aria-label': t('textTitle') },
+        ...TEXT_PROFILES.map((profile) =>
+          h(Temperature, {
+            key: profile.id,
+            id: profile.id,
+            label: labelOf(profile.label),
+            selected: temperature === profile.id,
+            onSelect: () => chooseText(profile.id),
+          }),
+        ),
+      ),
+    ),
   )
 }
 
@@ -267,8 +368,9 @@ function apply(ctx) {
   ctx.effect(() => {
     const disposers = []
     if (localeService !== null) disposers.push(localeService.register(LOCALE_NS, MESSAGES))
+    textProfile = readStoredText()
     select(readStored())
-    // Another window may switch the palette; localStorage is per origin.
+    // Another window may switch the palette or the temperature; localStorage is per origin.
     window.addEventListener('storage', onStorage)
     return () => {
       window.removeEventListener('storage', onStorage)
